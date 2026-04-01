@@ -1587,459 +1587,614 @@
             color: #78350f !important;
         }
 
-        /* REV MANAGEMENT TAB */
-        .rev-mgmt-container {
+        /* GIS DATA TAB */
+        .gis-container {
             padding: 24px;
-            max-width: 1400px;
+            max-width: 1800px;
             margin: 0 auto;
         }
 
-        .rev-mgmt-header {
+        .gis-top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             padding: 20px 24px;
             background: #ffffff;
             border-radius: 16px;
             border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
-        .rev-mgmt-header h2 {
+        .gis-search-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .gis-city-search {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .gis-city-search label {
+            font-weight: 600;
             color: #0f172a;
-            font-weight: 300;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin: 0;
-        }
-
-        .rev-mgmt-header p {
-            color: #64748b;
-            margin: 5px 0 0 0;
+            white-space: nowrap;
             font-size: 0.9rem;
         }
 
-        .rev-mgmt-actions {
+        .gis-city-input-group {
+            position: relative;
+        }
+
+        .gis-city-input-group input {
+            width: 280px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .gis-city-input-group input:focus {
+            outline: none;
+            border-color: #b8860b;
+            box-shadow: 0 0 0 3px rgba(184,134,11,0.15);
+        }
+
+        .gis-city-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .gis-city-dropdown.show { display: block; }
+
+        .gis-city-dropdown-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .gis-city-dropdown-item:hover { background: #fef3c7; }
+
+        .gis-selected-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+        }
+
+        .gis-selected-city {
+            font-weight: 700;
+            color: #92400e;
+        }
+
+        .gis-selected-county {
+            font-size: 0.85rem;
+            color: #b45309;
+        }
+
+        .gis-portal-links {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .gis-portal-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .gis-portal-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .gis-portal-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .gis-portal-link.primary {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            box-shadow: 0 3px 10px rgba(59,130,246,0.3);
+        }
+
+        .gis-portal-link.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(59,130,246,0.4);
+        }
+
+        .gis-portal-link.secondary {
+            background: #f1f5f9;
+            color: #1e40af;
+            border: 1px solid #dbeafe;
+        }
+
+        .gis-portal-link.secondary:hover {
+            background: #dbeafe;
+            border-color: #93c5fd;
+            transform: translateY(-1px);
+        }
+
+        .gis-portal-link svg { flex-shrink: 0; width: 14px; height: 14px; }
+
+        /* Filters Panel */
+        .gis-filters-panel {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        .gis-filters-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .gis-filters-header h3 {
+            font-size: 1.1rem;
+            color: #0f172a;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .gis-filter-actions {
             display: flex;
             gap: 12px;
         }
 
-        .rev-apply-all-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #b8860b, #d4a84b);
-            color: white;
-            border: none;
+        .gis-reset-btn {
+            padding: 10px 20px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             border-radius: 10px;
+            color: #64748b;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .rev-apply-all-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(184, 134, 11, 0.3);
-        }
+        .gis-reset-btn:hover { background: #e2e8f0; color: #0f172a; }
 
-        .resort-selectors {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .resort-selector {
-            background: #ffffff;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            padding: 16px;
+        .gis-search-btn {
+            padding: 10px 28px;
+            background: linear-gradient(135deg, #b8860b, #d4a017);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
             transition: all 0.2s;
-        }
-
-        .resort-selector.primary {
-            border-color: #b8860b;
-            background: linear-gradient(135deg, #fffbeb, #fef3c7);
-        }
-
-        .resort-selector-label {
-            font-size: 0.7rem;
+            box-shadow: 0 4px 12px rgba(184,134,11,0.3);
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        .gis-search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(184,134,11,0.4);
+        }
+
+        .gis-filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .gis-filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .gis-filter-group label {
+            font-size: 0.75rem;
             color: #64748b;
-            margin-bottom: 8px;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .resort-selector.primary .resort-selector-label {
-            color: #92400e;
-        }
-
-        .resort-selector select {
-            width: 100%;
-            padding: 10px 12px;
+        .gis-filter-group select,
+        .gis-filter-group input {
+            padding: 10px 14px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-size: 0.9rem;
-            background: white;
-            cursor: pointer;
+            background: #f8fafc;
+            color: #1e293b;
+            transition: border-color 0.2s;
         }
 
-        .resort-selector.primary select {
+        .gis-filter-group select:focus,
+        .gis-filter-group input:focus {
+            outline: none;
             border-color: #b8860b;
+            box-shadow: 0 0 0 3px rgba(184,134,11,0.1);
         }
 
-        .date-range-selector {
+        .gis-filter-wide {
+            grid-column: span 2;
+        }
+
+        .gis-zoning-checks {
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 20px;
         }
 
-        .date-range-btn {
-            padding: 8px 16px;
+        .gis-check {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
-            background: white;
             border-radius: 8px;
+            font-size: 0.85rem !important;
+            color: #475569 !important;
+            font-weight: 500 !important;
+            text-transform: none !important;
+            letter-spacing: 0 !important;
             cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .gis-check:has(input:checked) {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border-color: #f59e0b;
+            color: #92400e !important;
+        }
+
+        .gis-check input { accent-color: #b8860b; }
+
+        /* Results Header */
+        .gis-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border-radius: 12px;
+            border: 1px solid #f59e0b;
+        }
+
+        .gis-results-count {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #92400e;
+        }
+
+        .gis-results-count span {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .gis-results-meta {
             font-size: 0.85rem;
-            transition: all 0.2s;
+            color: #b45309;
+            font-weight: 400;
+            margin-left: 8px;
         }
 
-        .date-range-btn.active {
-            background: #0f172a;
-            color: white;
-            border-color: #0f172a;
+        .gis-sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .rev-table-container {
+        .gis-sort-controls label {
+            font-size: 0.85rem;
+            color: #92400e;
+            font-weight: 500;
+        }
+
+        .gis-sort-controls select {
+            padding: 8px 14px;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        /* Results Table */
+        .gis-results-table-container {
             background: #ffffff;
             border-radius: 16px;
             border: 1px solid #e2e8f0;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 600px;
+            min-height: 200px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
 
-        .rev-table {
+        .gis-results-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .rev-table thead {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        .gis-results-table thead {
             position: sticky;
             top: 0;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
             z-index: 10;
         }
 
-        .rev-table th {
+        .gis-results-table th {
             padding: 14px 12px;
-            text-align: center;
+            text-align: left;
             font-size: 0.7rem;
             font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 1px;
             border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
         }
 
-        .rev-table th:first-child {
-            text-align: left;
-            padding-left: 20px;
-        }
-
-        .rev-table th.your-rate-col {
-            background: linear-gradient(135deg, #fffbeb, #fef3c7);
-            color: #92400e;
-        }
-
-        .rev-table th.rec-col {
-            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-            color: #047857;
-        }
-
-        .rev-table td {
-            padding: 14px 12px;
-            text-align: center;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.95rem;
-        }
-
-        .rev-table td:first-child {
-            text-align: left;
-            padding-left: 20px;
-        }
-
-        .rev-table tr:hover {
-            background: #fefce8;
-        }
-
-        .rev-table tr.expanded {
-            background: #f8fafc;
-        }
-
-        .date-cell {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .expand-btn {
-            width: 24px;
-            height: 24px;
-            border: none;
-            background: #f1f5f9;
-            border-radius: 6px;
+        .gis-th-sortable {
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            font-size: 0.75rem;
+            user-select: none;
         }
 
-        .expand-btn:hover {
-            background: #e2e8f0;
-        }
-
-        .expand-btn.expanded {
-            background: #0f172a;
-            color: white;
-        }
-
-        .date-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .date-day {
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .date-full {
-            font-size: 0.75rem;
-            color: #64748b;
-        }
-
-        .rate-cell {
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .rate-cell.your-rate {
-            background: linear-gradient(135deg, #fffbeb, #fef3c7);
-            color: #92400e;
-        }
-
-        .rate-cell.comp-rate {
-            color: #64748b;
-        }
-
-        .rate-cell.no-data {
-            color: #cbd5e1;
-            font-weight: 400;
-        }
-
-        .rec-cell {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .rec-rate {
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .rec-rate.raise {
-            color: #059669;
-        }
-
-        .rec-rate.lower {
-            color: #dc2626;
-        }
-
-        .rec-rate.hold {
-            color: #64748b;
-        }
-
-        .rec-direction {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-        }
-
-        .rec-direction.raise {
-            background: #dcfce7;
-            color: #059669;
-        }
-
-        .rec-direction.lower {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .rec-direction.hold {
-            background: #f1f5f9;
-            color: #64748b;
-        }
-
-        .adjust-controls {
-            display: flex;
-            gap: 4px;
-        }
-
-        .adjust-btn {
-            width: 28px;
-            height: 28px;
-            border: 1px solid #e2e8f0;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.15s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .adjust-btn:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
-        }
-
-        .adjust-btn.up:hover {
-            background: #dcfce7;
-            border-color: #86efac;
-            color: #059669;
-        }
-
-        .adjust-btn.down:hover {
-            background: #fee2e2;
-            border-color: #fca5a5;
-            color: #dc2626;
-        }
-
-        .apply-btn {
-            padding: 6px 14px;
-            background: linear-gradient(135deg, #b8860b, #d4a84b);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .apply-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3);
-        }
-
-        .apply-btn.applied {
-            background: #059669;
-        }
-
-        /* Room type expansion rows */
-        .room-type-row {
-            display: none;
-        }
-
-        .room-type-row.visible {
-            display: table-row;
-        }
-
-        .room-type-row td {
-            background: #f8fafc;
-            padding: 10px 12px;
-            font-size: 0.85rem;
-        }
-
-        .room-type-row td:first-child {
-            padding-left: 54px;
-        }
-
-        .room-type-name {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #64748b;
-        }
-
-        .room-type-name::before {
-            content: '├─';
-            color: #cbd5e1;
-            font-family: monospace;
-        }
-
-        .room-type-row:last-of-type .room-type-name::before {
-            content: '└─';
-        }
-
-        .occupancy-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .occupancy-high {
-            background: #dcfce7;
-            color: #059669;
-        }
-
-        .occupancy-medium {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .occupancy-low {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .change-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-left: 6px;
-        }
-
-        .change-badge.positive {
-            background: #dcfce7;
-            color: #059669;
-        }
-
-        .change-badge.negative {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .weekend-row {
-            background: linear-gradient(90deg, #fffbeb 0%, #ffffff 20%);
-        }
-
-        .weekend-row:hover {
-            background: linear-gradient(90deg, #fef3c7 0%, #fefce8 20%);
-        }
-
-        .weekend-row .date-day {
+        .gis-th-sortable:hover {
             color: #b8860b;
         }
 
-        .rev-table-container {
-            max-height: calc(100vh - 380px);
-            overflow-y: auto;
+        .gis-results-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+            color: #1e293b;
         }
+
+        .gis-results-table tr:hover { background: #fefce8; }
+        .gis-results-table tr:nth-child(even) { background: #fafafa; }
+        .gis-results-table tr:nth-child(even):hover { background: #fefce8; }
+
+        .gis-parcel-link {
+            color: #1e40af;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .gis-parcel-link:hover { text-decoration: underline; }
+
+        .gis-owner-name { font-weight: 600; color: #0f172a; }
+        .gis-owner-type { font-size: 0.75rem; color: #64748b; display: block; }
+
+        .gis-zoning-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .gis-zoning-commercial { background: #dcfce7; color: #166534; }
+        .gis-zoning-resort { background: #dbeafe; color: #1e40af; }
+        .gis-zoning-mixed { background: #f3e8ff; color: #7c3aed; }
+        .gis-zoning-agricultural { background: #fef3c7; color: #92400e; }
+        .gis-zoning-residential { background: #fee2e2; color: #991b1b; }
+        .gis-zoning-industrial { background: #f1f5f9; color: #475569; }
+        .gis-zoning-unzoned { background: #f1f5f9; color: #64748b; }
+        .gis-zoning-planned { background: #fce7f3; color: #9d174d; }
+
+        .gis-value-cell { font-weight: 600; color: #0f172a; }
+        .gis-distance-cell { font-weight: 500; color: #64748b; }
+
+        .gis-detail-btn {
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #b8860b, #d4a017);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .gis-detail-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(184,134,11,0.3);
+        }
+
+        /* Pagination */
+        .gis-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-top: 20px;
+            padding: 16px;
+        }
+
+        .gis-page-btn {
+            padding: 10px 20px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .gis-page-btn:hover:not(:disabled) {
+            background: #f8fafc;
+            border-color: #b8860b;
+            color: #b8860b;
+        }
+
+        .gis-page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .gis-page-info {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Empty State */
+        .gis-empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .gis-empty-icon { font-size: 4rem; margin-bottom: 16px; }
+
+        .gis-empty-state h3 {
+            font-size: 1.3rem;
+            color: #0f172a;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .gis-empty-state p {
+            color: #64748b;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Detail Modal */
+        .gis-detail-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15,23,42,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+        }
+
+        .gis-detail-modal.active { display: flex; }
+
+        .gis-detail-content {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 650px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.2);
+        }
+
+        .gis-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .gis-detail-header h3 {
+            font-size: 1.3rem;
+            color: #0f172a;
+            margin: 0 0 4px 0;
+        }
+
+        .gis-detail-close {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gis-detail-close:hover { background: #e2e8f0; }
+
+        .gis-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .gis-detail-item {
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .gis-detail-item label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .gis-detail-item span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .gis-detail-full { grid-column: span 2; }
+
+        /* (Rev management styles removed) */
 
         /* Chat Interface */
         .chat-container {
@@ -2353,9 +2508,9 @@
     <nav class="nav-tabs">
         <div class="nav-tab active" onclick="switchTab('map')">Map View</div>
         <div class="nav-tab" onclick="switchTab('compare')">Compare Properties</div>
+        <div class="nav-tab" onclick="switchTab('gis')">GIS DATA</div>
         <div class="nav-tab" onclick="switchTab('rawData')">RAW DATA</div>
         <div class="nav-tab" onclick="switchTab('rankings')">MARKET RANKINGS</div>
-        <div class="nav-tab" onclick="switchTab('revMgmt')">REV MANAGEMENT</div>
         <div class="nav-tab chat-tab" onclick="switchTab('chat')">Chat Me</div>
     </nav>
 
@@ -2640,80 +2795,211 @@
         </div>
 
         <!-- REV MANAGEMENT TAB -->
-        <div id="revMgmtTab" class="tab-content">
-            <div class="rev-mgmt-container">
-                <div class="rev-mgmt-header">
-                    <div>
-                        <h2>Revenue Management</h2>
-                        <p>Compare rates, get recommendations, and optimize pricing across your portfolio</p>
+        <!-- GIS DATA TAB -->
+        <div id="gisTab" class="tab-content">
+            <div class="gis-container">
+                <!-- Top bar: City search + GIS Link -->
+                <div class="gis-top-bar">
+                    <div class="gis-search-section">
+                        <div class="gis-city-search">
+                            <label>Search Location</label>
+                            <div class="gis-city-input-group">
+                                <input type="text" id="gisCityInput" placeholder="Enter city or zip code..." autocomplete="off">
+                                <div class="gis-city-dropdown" id="gisCityDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="gis-selected-info" id="gisSelectedInfo" style="display:none;">
+                            <span class="gis-selected-city" id="gisSelectedCity"></span>
+                            <span class="gis-selected-county" id="gisSelectedCounty"></span>
+                        </div>
                     </div>
-                    <div class="rev-mgmt-actions">
-                        <button class="rev-apply-all-btn" onclick="applyAllRevChanges()">Apply All Changes</button>
-                    </div>
-                </div>
-
-                <div class="resort-selectors">
-                    <div class="resort-selector primary">
-                        <div class="resort-selector-label">Your Property</div>
-                        <select id="revPrimaryResort" onchange="updateRevTable()">
-                            <option value="">Select your resort...</option>
-                        </select>
-                    </div>
-                    <div class="resort-selector">
-                        <div class="resort-selector-label">Competitor 1</div>
-                        <select id="revComp1" onchange="updateRevTable()">
-                            <option value="">+ Add Competitor</option>
-                        </select>
-                    </div>
-                    <div class="resort-selector">
-                        <div class="resort-selector-label">Competitor 2</div>
-                        <select id="revComp2" onchange="updateRevTable()">
-                            <option value="">+ Add Competitor</option>
-                        </select>
-                    </div>
-                    <div class="resort-selector">
-                        <div class="resort-selector-label">Competitor 3</div>
-                        <select id="revComp3" onchange="updateRevTable()">
-                            <option value="">+ Add Competitor</option>
-                        </select>
+                    <div class="gis-portal-links" id="gisPortalLinks" style="display:none;">
+                        <span class="gis-portal-label">GIS Sources:</span>
+                        <div class="gis-portal-list" id="gisPortalList"></div>
                     </div>
                 </div>
 
-                <div class="date-range-selector">
-                    <button class="date-range-btn active" onclick="setRevDateRange(7, this)">7 Days</button>
-                    <button class="date-range-btn" onclick="setRevDateRange(14, this)">14 Days</button>
-                    <button class="date-range-btn" onclick="setRevDateRange(30, this)">30 Days</button>
-                    <button class="date-range-btn" onclick="setRevDateRange(90, this)">90 Days</button>
+                <!-- Filters Panel -->
+                <div class="gis-filters-panel">
+                    <div class="gis-filters-header">
+                        <h3>🔍 Property Search Filters</h3>
+                        <div class="gis-filter-actions">
+                            <button class="gis-reset-btn" onclick="resetGisFilters()">Reset All</button>
+                            <button class="gis-search-btn" onclick="searchGisProperties()">Search Properties</button>
+                        </div>
+                    </div>
+                    <div class="gis-filters-grid">
+                        <!-- Radius -->
+                        <div class="gis-filter-group">
+                            <label>Search Radius</label>
+                            <select id="gisRadius">
+                                <option value="1">1 mile</option>
+                                <option value="2.5">2.5 miles</option>
+                                <option value="5">5 miles</option>
+                                <option value="10" selected>10 miles</option>
+                                <option value="25">25 miles</option>
+                                <option value="50">50 miles</option>
+                            </select>
+                        </div>
+                        <!-- Acreage Min -->
+                        <div class="gis-filter-group">
+                            <label>Min Acreage</label>
+                            <input type="number" id="gisMinAcres" placeholder="e.g. 25" min="0" step="1">
+                        </div>
+                        <!-- Acreage Max -->
+                        <div class="gis-filter-group">
+                            <label>Max Acreage</label>
+                            <input type="number" id="gisMaxAcres" placeholder="No max">
+                        </div>
+                        <!-- Price Min -->
+                        <div class="gis-filter-group">
+                            <label>Min Price (Assessed Value)</label>
+                            <input type="number" id="gisMinPrice" placeholder="e.g. 500000" min="0" step="1000">
+                        </div>
+                        <!-- Price Max -->
+                        <div class="gis-filter-group">
+                            <label>Max Price (Assessed Value)</label>
+                            <input type="number" id="gisMaxPrice" placeholder="No max">
+                        </div>
+                        <!-- Zoning -->
+                        <div class="gis-filter-group gis-filter-wide">
+                            <label>Zoning Type</label>
+                            <div class="gis-zoning-checks" id="gisZoningChecks">
+                                <label class="gis-check"><input type="checkbox" value="commercial" checked> Commercial</label>
+                                <label class="gis-check"><input type="checkbox" value="resort" checked> Resort</label>
+                                <label class="gis-check"><input type="checkbox" value="mixed-use"> Mixed Use</label>
+                                <label class="gis-check"><input type="checkbox" value="planned-development"> Planned Development</label>
+                                <label class="gis-check"><input type="checkbox" value="agricultural"> Agricultural</label>
+                                <label class="gis-check"><input type="checkbox" value="residential"> Residential</label>
+                                <label class="gis-check"><input type="checkbox" value="industrial"> Industrial</label>
+                                <label class="gis-check"><input type="checkbox" value="unzoned"> Unzoned / No Zoning</label>
+                            </div>
+                        </div>
+                        <!-- Owner Type -->
+                        <div class="gis-filter-group">
+                            <label>Owner Type</label>
+                            <select id="gisOwnerType">
+                                <option value="all">All</option>
+                                <option value="individual">Individual</option>
+                                <option value="corporate">Corporate / LLC</option>
+                                <option value="trust">Trust</option>
+                                <option value="government">Government</option>
+                            </select>
+                        </div>
+                        <!-- Tax Status -->
+                        <div class="gis-filter-group">
+                            <label>Tax Status</label>
+                            <select id="gisTaxStatus">
+                                <option value="all">All</option>
+                                <option value="current">Current</option>
+                                <option value="delinquent">Delinquent (Motivated Sellers)</option>
+                            </select>
+                        </div>
+                        <!-- Water District -->
+                        <div class="gis-filter-group">
+                            <label>Water District</label>
+                            <select id="gisWaterDistrict">
+                                <option value="all">All</option>
+                                <option value="yes">Has Water District</option>
+                                <option value="no">No Water District</option>
+                            </select>
+                        </div>
+                        <!-- Homestead -->
+                        <div class="gis-filter-group">
+                            <label>Homestead Status</label>
+                            <select id="gisHomestead">
+                                <option value="all">All</option>
+                                <option value="exclude">Exclude Homestead</option>
+                                <option value="only">Homestead Only</option>
+                            </select>
+                        </div>
+                        <!-- Road Access -->
+                        <div class="gis-filter-group">
+                            <label>Road Frontage / Access</label>
+                            <select id="gisRoadAccess">
+                                <option value="all">All</option>
+                                <option value="paved">Paved Road</option>
+                                <option value="any-road">Any Road Access</option>
+                                <option value="no-road">No Road (Remote)</option>
+                            </select>
+                        </div>
+                        <!-- Topography -->
+                        <div class="gis-filter-group">
+                            <label>Topography</label>
+                            <select id="gisTopography">
+                                <option value="all">All</option>
+                                <option value="flat">Flat</option>
+                                <option value="gentle-slope">Gentle Slope</option>
+                                <option value="hilly">Hilly / Mountainous</option>
+                            </select>
+                        </div>
+                        <!-- Last Sale -->
+                        <div class="gis-filter-group">
+                            <label>Last Sale Date</label>
+                            <select id="gisLastSale">
+                                <option value="all">Any Time</option>
+                                <option value="1">Within 1 Year</option>
+                                <option value="3">Within 3 Years</option>
+                                <option value="5">Within 5 Years</option>
+                                <option value="10">Within 10 Years</option>
+                                <option value="never">Never Sold</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="rev-table-container">
-                    <table class="rev-table">
+                <!-- Results Summary -->
+                <div class="gis-results-header" id="gisResultsHeader" style="display:none;">
+                    <div class="gis-results-count">
+                        <span id="gisResultCount">0</span> properties found
+                        <span class="gis-results-meta" id="gisResultsMeta"></span>
+                    </div>
+                    <div class="gis-sort-controls">
+                        <label>Sort by:</label>
+                        <select id="gisSortBy" onchange="sortGisResults()">
+                            <option value="distance">Distance (Closest)</option>
+                            <option value="acreage-desc">Acreage (Largest)</option>
+                            <option value="acreage-asc">Acreage (Smallest)</option>
+                            <option value="price-desc">Price (Highest)</option>
+                            <option value="price-asc">Price (Lowest)</option>
+                            <option value="sale-date">Last Sale (Most Recent)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Property Results Table -->
+                <div class="gis-results-table-container" id="gisResultsContainer" style="display:none;">
+                    <table class="gis-results-table">
                         <thead>
                             <tr>
-                                <th style="width: 140px;">Date</th>
-                                <th class="your-rate-col" style="width: 100px;">Your Rate</th>
-                                <th id="revComp1Header" style="width: 100px;">Comp 1</th>
-                                <th id="revComp2Header" style="width: 100px;">Comp 2</th>
-                                <th id="revComp3Header" style="width: 100px;">Comp 3</th>
-                                <th class="rec-col" style="width: 140px;">Nehemiah Rec</th>
-                                <th style="width: 80px;">Adjust</th>
-                                <th style="width: 80px;">Action</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('parcel')">Parcel #</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('owner')">Owner</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('address')">Address</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('acreage')">Acreage</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('zoning')">Zoning</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('value')">Assessed Value</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('lastSale')">Last Sale</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('distance')">Distance</th>
+                                <th>Details</th>
                             </tr>
                         </thead>
-                        <tbody id="revTableBody">
-                            <!-- Populated by JS -->
+                        <tbody id="gisResultsBody">
                         </tbody>
                     </table>
                 </div>
 
-                <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                        <span style="font-weight: 600; color: #0f172a;">API Integration Status</span>
-                        <span style="padding: 4px 10px; background: #fef3c7; color: #92400e; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Coming Soon</span>
-                    </div>
-                    <p style="color: #64748b; font-size: 0.85rem; margin: 0;">
-                        Connect your PMS (Cloudbeds, Opera, Guesty, etc.) to automatically apply rate changes with one click.
-                    </p>
+                <!-- Pagination -->
+                <div class="gis-pagination" id="gisPagination" style="display:none;">
+                    <button class="gis-page-btn" onclick="gisChangePage(-1)" id="gisPrevBtn">← Previous</button>
+                    <span class="gis-page-info" id="gisPageInfo">Page 1 of 1</span>
+                    <button class="gis-page-btn" onclick="gisChangePage(1)" id="gisNextBtn">Next →</button>
+                </div>
+
+                <!-- Empty State -->
+                <div class="gis-empty-state" id="gisEmptyState">
+                    <div class="gis-empty-icon">🗺️</div>
+                    <h3>Search County GIS Records</h3>
+                    <p>Enter a city or zip code above, set your filters, and search for parcels matching your criteria. Data is sourced from county GIS portals including assessor records, zoning, and ownership information.</p>
                 </div>
             </div>
         </div>
@@ -3268,298 +3554,524 @@
             stateFilter.innerHTML = options;
         }
 
-        // ============ REV MANAGEMENT ============
+        // ============ GIS DATA TAB ============
 
-        let revDateRange = 7;
-        let revAdjustments = {}; // Store user adjustments to recommendations
+        // County GIS portals by state/county
+        const countyGISPortals = {
+            'Yavapai County, AZ': 'https://gis.yavapaiaz.gov/v4/map.aspx?search=',
+            'Maricopa County, AZ': 'https://maps.mcassessor.maricopa.gov/',
+            'Coconino County, AZ': 'https://gis.coconino.az.gov/GISViewer/',
+            'Pima County, AZ': 'https://gis.pima.gov/',
+            'Gila County, AZ': 'https://gis.gilacountyaz.gov/',
+            'Navajo County, AZ': 'https://navajocountyaz.gov/gis',
+            'Apache County, AZ': 'https://www.apachecountyaz.gov/gis',
+            'Graham County, AZ': 'https://www.graham.az.gov/gis',
+            'Pinal County, AZ': 'https://pinalcountyaz.gov/gis',
+            'La Paz County, AZ': 'https://www.co.la-paz.az.us/gis',
+            'Mohave County, AZ': 'https://gis.mohavecounty.us/',
+            'Santa Cruz County, AZ': 'https://www.santacruzcountyaz.gov/gis',
+            'Cochise County, AZ': 'https://www.cochise.az.gov/gis',
+            'Greenlee County, AZ': 'https://www.co.greenlee.az.us/gis',
+            'default': 'https://www.google.com/maps'
+        };
 
-        // Initialize REV Management dropdowns
-        function initRevManagement() {
-            const primarySelect = document.getElementById('revPrimaryResort');
-            const comp1Select = document.getElementById('revComp1');
-            const comp2Select = document.getElementById('revComp2');
-            const comp3Select = document.getElementById('revComp3');
+        // Counties with approximate center lat/lng and radius for boundary detection
+        const countyBoundaries = [
+            { county: 'Yavapai County', state: 'AZ', lat: 34.60, lng: -112.35, radiusMi: 45, gisKey: 'Yavapai County, AZ' },
+            { county: 'Coconino County', state: 'AZ', lat: 35.50, lng: -111.65, radiusMi: 60, gisKey: 'Coconino County, AZ' },
+            { county: 'Maricopa County', state: 'AZ', lat: 33.45, lng: -112.07, radiusMi: 50, gisKey: 'Maricopa County, AZ' },
+            { county: 'Pima County', state: 'AZ', lat: 32.10, lng: -111.80, radiusMi: 45, gisKey: 'Pima County, AZ' },
+            { county: 'Gila County', state: 'AZ', lat: 33.80, lng: -110.80, radiusMi: 40, gisKey: 'Gila County, AZ' },
+            { county: 'Navajo County', state: 'AZ', lat: 34.90, lng: -110.30, radiusMi: 50, gisKey: 'Navajo County, AZ' },
+            { county: 'Apache County', state: 'AZ', lat: 35.40, lng: -109.30, radiusMi: 50, gisKey: 'Apache County, AZ' },
+            { county: 'Graham County', state: 'AZ', lat: 32.90, lng: -109.90, radiusMi: 35, gisKey: 'Graham County, AZ' },
+            { county: 'Pinal County', state: 'AZ', lat: 32.90, lng: -111.40, radiusMi: 40, gisKey: 'Pinal County, AZ' },
+            { county: 'La Paz County', state: 'AZ', lat: 33.70, lng: -113.80, radiusMi: 40, gisKey: 'La Paz County, AZ' },
+            { county: 'Mohave County', state: 'AZ', lat: 35.50, lng: -113.80, radiusMi: 55, gisKey: 'Mohave County, AZ' },
+            { county: 'Santa Cruz County', state: 'AZ', lat: 31.50, lng: -110.80, radiusMi: 20, gisKey: 'Santa Cruz County, AZ' },
+            { county: 'Cochise County', state: 'AZ', lat: 31.90, lng: -109.80, radiusMi: 40, gisKey: 'Cochise County, AZ' },
+            { county: 'Greenlee County', state: 'AZ', lat: 33.20, lng: -109.20, radiusMi: 25, gisKey: 'Greenlee County, AZ' },
+        ];
 
-            if (!primarySelect) return;
+        // Map cities to their primary county
+        const cityCountyMap = {
+            'Sedona': { county: 'Yavapai County', state: 'AZ' },
+            'Prescott': { county: 'Yavapai County', state: 'AZ' },
+            'Cottonwood': { county: 'Yavapai County', state: 'AZ' },
+            'Camp Verde': { county: 'Yavapai County', state: 'AZ' },
+            'Flagstaff': { county: 'Coconino County', state: 'AZ' },
+            'Phoenix': { county: 'Maricopa County', state: 'AZ' },
+            'Scottsdale': { county: 'Maricopa County', state: 'AZ' },
+            'Tucson': { county: 'Pima County', state: 'AZ' },
+            'Payson': { county: 'Gila County', state: 'AZ' },
+            'Globe': { county: 'Gila County', state: 'AZ' },
+            'Show Low': { county: 'Navajo County', state: 'AZ' },
+            'Pinetop-Lakeside': { county: 'Navajo County', state: 'AZ' },
+        };
 
-            // Build resort options sorted by name
-            const sortedResorts = [...resortDatabase].sort((a, b) => a.name.localeCompare(b.name));
-
-            let primaryOptions = '<option value="">Select your resort...</option>';
-            let compOptions = '<option value="">+ Add Competitor</option>';
-
-            sortedResorts.forEach(resort => {
-                const optionText = `${resort.name} (${resort.city}, ${resort.state})`;
-                primaryOptions += `<option value="${resort.name}">${optionText}</option>`;
-                compOptions += `<option value="${resort.name}">${optionText}</option>`;
-            });
-
-            primarySelect.innerHTML = primaryOptions;
-            comp1Select.innerHTML = compOptions;
-            comp2Select.innerHTML = compOptions;
-            comp3Select.innerHTML = compOptions;
-
-            // Default to Nature Link Resorts if available
-            const natureLinkOption = sortedResorts.find(r => r.name.includes('Nature Link'));
-            if (natureLinkOption) {
-                primarySelect.value = natureLinkOption.name;
-            }
-
-            updateRevTable();
+        // Haversine distance in miles
+        function haversineMi(lat1, lng1, lat2, lng2) {
+            const R = 3959; // Earth radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
-        // Set date range for rev table
-        function setRevDateRange(days, btn) {
-            revDateRange = days;
-            document.querySelectorAll('.date-range-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            updateRevTable();
-        }
-
-        // Get resort by name
-        function getResortByName(name) {
-            return resortDatabase.find(r => r.name === name);
-        }
-
-        // Generate simulated daily rate based on base ADR and date
-        function getSimulatedRate(baseAdr, date, variance = 0.15) {
-            const dayOfWeek = date.getDay();
-            const month = date.getMonth();
-
-            // Weekend premium (Fri-Sat)
-            let rate = baseAdr;
-            if (dayOfWeek === 5 || dayOfWeek === 6) {
-                rate *= 1.15;
-            } else if (dayOfWeek === 0) {
-                rate *= 1.05; // Sunday slight premium
-            }
-
-            // Seasonal adjustments
-            if (month >= 5 && month <= 8) { // Summer peak
-                rate *= 1.12;
-            } else if (month === 11 || month === 0) { // Holiday season
-                rate *= 1.18;
-            } else if (month >= 2 && month <= 4) { // Spring shoulder
-                rate *= 0.95;
-            }
-
-            // Add some daily variance
-            const seed = date.getDate() + month * 31;
-            const randomFactor = 0.97 + (Math.sin(seed) * 0.5 + 0.5) * 0.06;
-            rate *= randomFactor;
-
-            return Math.round(rate);
-        }
-
-        // Calculate Nehemiah recommendation based on comp rates
-        function calculateRecommendation(yourRate, compRates, date) {
-            const validCompRates = compRates.filter(r => r > 0);
-
-            if (validCompRates.length === 0) {
-                return { rate: yourRate, direction: 'hold' };
-            }
-
-            const avgCompRate = validCompRates.reduce((a, b) => a + b, 0) / validCompRates.length;
-            const maxCompRate = Math.max(...validCompRates);
-            const minCompRate = Math.min(...validCompRates);
-
-            // Nehemiah strategy: Position at 75th percentile of comp rates
-            const targetRate = minCompRate + (maxCompRate - minCompRate) * 0.75;
-
-            // Round to nearest $5
-            let recRate = Math.round(targetRate / 5) * 5;
-
-            // Determine direction
-            let direction = 'hold';
-            if (recRate > yourRate + 10) {
-                direction = 'raise';
-            } else if (recRate < yourRate - 10) {
-                direction = 'lower';
-            }
-
-            return { rate: recRate, direction };
-        }
-
-        // Update the REV table
-        function updateRevTable() {
-            const tbody = document.getElementById('revTableBody');
-            if (!tbody) return;
-
-            const primaryName = document.getElementById('revPrimaryResort')?.value;
-            const comp1Name = document.getElementById('revComp1')?.value;
-            const comp2Name = document.getElementById('revComp2')?.value;
-            const comp3Name = document.getElementById('revComp3')?.value;
-
-            // Update column headers
-            document.getElementById('revComp1Header').textContent = comp1Name ? getResortByName(comp1Name)?.name.split(' ').slice(0, 2).join(' ') : 'Comp 1';
-            document.getElementById('revComp2Header').textContent = comp2Name ? getResortByName(comp2Name)?.name.split(' ').slice(0, 2).join(' ') : 'Comp 2';
-            document.getElementById('revComp3Header').textContent = comp3Name ? getResortByName(comp3Name)?.name.split(' ').slice(0, 2).join(' ') : 'Comp 3';
-
-            const primaryResort = getResortByName(primaryName);
-            const comp1Resort = getResortByName(comp1Name);
-            const comp2Resort = getResortByName(comp2Name);
-            const comp3Resort = getResortByName(comp3Name);
-
-            const today = new Date();
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-            let html = '';
-
-            for (let i = 0; i < revDateRange; i++) {
-                const date = new Date(today);
-                date.setDate(today.getDate() + i);
-
-                const dateKey = date.toISOString().split('T')[0];
-                const dayName = days[date.getDay()];
-                const monthName = months[date.getMonth()];
-                const dayNum = date.getDate();
-
-                const isWeekend = date.getDay() === 5 || date.getDay() === 6;
-
-                // Get rates
-                const yourRate = primaryResort ? getSimulatedRate(primaryResort.adr, date) : 0;
-                const comp1Rate = comp1Resort ? getSimulatedRate(comp1Resort.adr, date) : 0;
-                const comp2Rate = comp2Resort ? getSimulatedRate(comp2Resort.adr, date) : 0;
-                const comp3Rate = comp3Resort ? getSimulatedRate(comp3Resort.adr, date) : 0;
-
-                // Calculate recommendation
-                const rec = calculateRecommendation(yourRate, [comp1Rate, comp2Rate, comp3Rate], date);
-
-                // Apply any user adjustments
-                const adjustment = revAdjustments[dateKey] || 0;
-                const adjustedRec = rec.rate + adjustment;
-
-                // Determine final direction after adjustment
-                let finalDirection = 'hold';
-                if (adjustedRec > yourRate + 10) finalDirection = 'raise';
-                else if (adjustedRec < yourRate - 10) finalDirection = 'lower';
-
-                const directionIcon = finalDirection === 'raise' ? '↑' : finalDirection === 'lower' ? '↓' : '→';
-                const changeAmount = adjustedRec - yourRate;
-                const changeText = changeAmount > 0 ? `+$${changeAmount}` : changeAmount < 0 ? `-$${Math.abs(changeAmount)}` : '$0';
-
-                html += `
-                    <tr data-date="${dateKey}" class="${isWeekend ? 'weekend-row' : ''}">
-                        <td>
-                            <div class="date-cell">
-                                <button class="expand-btn" onclick="toggleRoomTypes('${dateKey}', this)">▶</button>
-                                <div class="date-info">
-                                    <span class="date-day">${dayName}</span>
-                                    <span class="date-full">${monthName} ${dayNum}</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="rate-cell your-rate">${yourRate > 0 ? '$' + yourRate : '-'}</td>
-                        <td class="rate-cell comp-rate ${comp1Rate === 0 ? 'no-data' : ''}">${comp1Rate > 0 ? '$' + comp1Rate : '-'}</td>
-                        <td class="rate-cell comp-rate ${comp2Rate === 0 ? 'no-data' : ''}">${comp2Rate > 0 ? '$' + comp2Rate : '-'}</td>
-                        <td class="rate-cell comp-rate ${comp3Rate === 0 ? 'no-data' : ''}">${comp3Rate > 0 ? '$' + comp3Rate : '-'}</td>
-                        <td class="rec-cell">
-                            <span class="rec-rate ${finalDirection}">${yourRate > 0 ? '$' + adjustedRec : '-'}</span>
-                            <span class="rec-direction ${finalDirection}">${directionIcon}</span>
-                            ${yourRate > 0 && changeAmount !== 0 ? `<span class="change-badge ${changeAmount > 0 ? 'positive' : 'negative'}">${changeText}</span>` : ''}
-                        </td>
-                        <td>
-                            <div class="adjust-controls">
-                                <button class="adjust-btn up" onclick="adjustRec('${dateKey}', 5)">▲</button>
-                                <button class="adjust-btn down" onclick="adjustRec('${dateKey}', -5)">▼</button>
-                            </div>
-                        </td>
-                        <td>
-                            <button class="apply-btn" onclick="applyRevChange('${dateKey}', this)">Apply</button>
-                        </td>
-                    </tr>
-                `;
-
-                // Room type rows (hidden by default)
-                if (primaryResort) {
-                    const roomTypes = ['Standard Room', 'Cabin', 'Lodge Suite', 'Premium Suite'];
-                    const multipliers = [0.85, 1.0, 1.25, 1.5];
-
-                    roomTypes.forEach((roomType, idx) => {
-                        const roomRate = Math.round(yourRate * multipliers[idx]);
-                        const roomRec = Math.round(adjustedRec * multipliers[idx]);
-                        const roomChange = roomRec - roomRate;
-                        const roomDirection = roomRec > roomRate + 5 ? 'raise' : roomRec < roomRate - 5 ? 'lower' : 'hold';
-                        const roomDirIcon = roomDirection === 'raise' ? '↑' : roomDirection === 'lower' ? '↓' : '→';
-
-                        html += `
-                            <tr class="room-type-row" data-parent="${dateKey}">
-                                <td><span class="room-type-name">${roomType}</span></td>
-                                <td class="rate-cell" style="background: #f8fafc;">$${roomRate}</td>
-                                <td class="rate-cell no-data">-</td>
-                                <td class="rate-cell no-data">-</td>
-                                <td class="rate-cell no-data">-</td>
-                                <td class="rec-cell">
-                                    <span class="rec-rate ${roomDirection}">$${roomRec}</span>
-                                    <span class="rec-direction ${roomDirection}">${roomDirIcon}</span>
-                                </td>
-                                <td>
-                                    <div class="adjust-controls">
-                                        <button class="adjust-btn up" onclick="event.stopPropagation()">▲</button>
-                                        <button class="adjust-btn down" onclick="event.stopPropagation()">▼</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="apply-btn" onclick="event.stopPropagation()">Apply</button>
-                                </td>
-                            </tr>
-                        `;
+        // Find all counties whose boundaries overlap the search radius
+        function findCountiesInRadius(lat, lng, searchRadiusMi, primaryCounty) {
+            const counties = [];
+            countyBoundaries.forEach(cb => {
+                const dist = haversineMi(lat, lng, cb.lat, cb.lng);
+                // If the search circle + county circle overlap, this county is relevant
+                if (dist < searchRadiusMi + cb.radiusMi) {
+                    const isPrimary = cb.county === primaryCounty;
+                    counties.push({
+                        county: cb.county,
+                        state: cb.state,
+                        gisKey: cb.gisKey,
+                        distance: Math.round(dist),
+                        isPrimary: isPrimary,
+                        url: countyGISPortals[cb.gisKey] || countyGISPortals['default']
                     });
                 }
-            }
-
-            tbody.innerHTML = html;
-        }
-
-        // Toggle room type expansion
-        function toggleRoomTypes(dateKey, btn) {
-            const rows = document.querySelectorAll(`.room-type-row[data-parent="${dateKey}"]`);
-            const isExpanded = btn.classList.contains('expanded');
-
-            if (isExpanded) {
-                btn.classList.remove('expanded');
-                btn.textContent = '▶';
-                rows.forEach(row => row.classList.remove('visible'));
-            } else {
-                btn.classList.add('expanded');
-                btn.textContent = '▼';
-                rows.forEach(row => row.classList.add('visible'));
-            }
-        }
-
-        // Adjust recommendation
-        function adjustRec(dateKey, amount) {
-            if (!revAdjustments[dateKey]) {
-                revAdjustments[dateKey] = 0;
-            }
-            revAdjustments[dateKey] += amount;
-            updateRevTable();
-        }
-
-        // Apply a single rev change
-        function applyRevChange(dateKey, btn) {
-            btn.textContent = '✓ Applied';
-            btn.classList.add('applied');
-            setTimeout(() => {
-                btn.textContent = 'Apply';
-                btn.classList.remove('applied');
-            }, 2000);
-        }
-
-        // Apply all rev changes
-        function applyAllRevChanges() {
-            const buttons = document.querySelectorAll('.apply-btn:not(.applied)');
-            buttons.forEach((btn, idx) => {
-                setTimeout(() => {
-                    btn.textContent = '✓ Applied';
-                    btn.classList.add('applied');
-                    setTimeout(() => {
-                        btn.textContent = 'Apply';
-                        btn.classList.remove('applied');
-                    }, 2000);
-                }, idx * 100);
             });
+            // Sort: primary first, then by distance
+            counties.sort((a, b) => {
+                if (a.isPrimary) return -1;
+                if (b.isPrimary) return 1;
+                return a.distance - b.distance;
+            });
+            return counties;
+        }
+
+        let gisActiveCounties = []; // Track counties in current search
+
+        let gisSelectedLocation = null;
+        let gisAllResults = [];
+        let gisCurrentPage = 1;
+        const GIS_PAGE_SIZE = 50;
+        let gisSortField = 'distance';
+        let gisSortDirection = 'asc';
+
+        // GIS City autocomplete
+        function initGisSearch() {
+            const input = document.getElementById('gisCityInput');
+            const dropdown = document.getElementById('gisCityDropdown');
+            if (!input) return;
+
+            input.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                if (query.length < 2) { dropdown.classList.remove('show'); return; }
+
+                const matches = (typeof usCities !== 'undefined' ? usCities : []).filter(c =>
+                    c.name.toLowerCase().includes(query) ||
+                    c.state.toLowerCase().includes(query) ||
+                    c.zip.includes(query) ||
+                    `${c.name}, ${c.state}`.toLowerCase().includes(query)
+                ).slice(0, 8);
+
+                if (matches.length > 0) {
+                    dropdown.innerHTML = matches.map(c => `
+                        <div class="gis-city-dropdown-item" onclick="selectGisCity('${c.name}', '${c.state}', '${c.zip}', ${c.lat}, ${c.lng})">
+                            <span style="font-weight:600;color:#0f172a;">${c.name}, ${c.state}</span>
+                            <span style="color:#64748b;font-size:0.85rem;">${c.zip}</span>
+                        </div>
+                    `).join('');
+                    dropdown.classList.add('show');
+                } else {
+                    dropdown.classList.remove('show');
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.gis-city-input-group')) dropdown.classList.remove('show');
+            });
+
+            // Update county links when radius changes
+            document.getElementById('gisRadius').addEventListener('change', function() {
+                if (gisSelectedLocation) {
+                    const countyInfo = cityCountyMap[gisSelectedLocation.name];
+                    const primaryCounty = countyInfo ? countyInfo.county : null;
+                    updateGisPortalLinks(gisSelectedLocation.lat, gisSelectedLocation.lng, primaryCounty);
+                }
+            });
+        }
+
+        function selectGisCity(name, state, zip, lat, lng) {
+            gisSelectedLocation = { name, state, zip, lat, lng };
+            document.getElementById('gisCityInput').value = `${name}, ${state}`;
+            document.getElementById('gisCityDropdown').classList.remove('show');
+
+            // Show selected info
+            document.getElementById('gisSelectedInfo').style.display = 'flex';
+            document.getElementById('gisSelectedCity').textContent = `${name}, ${state}`;
+
+            // Look up primary county
+            const countyInfo = cityCountyMap[name];
+            const primaryCounty = countyInfo ? countyInfo.county : null;
+            const countyName = countyInfo ? `${countyInfo.county}, ${countyInfo.state}` : `${state} County`;
+            document.getElementById('gisSelectedCounty').textContent = countyName;
+
+            // Detect counties in radius and show portal links
+            updateGisPortalLinks(lat, lng, primaryCounty);
+        }
+
+        function updateGisPortalLinks(lat, lng, primaryCounty) {
+            const radius = parseFloat(document.getElementById('gisRadius')?.value || 10);
+            const counties = findCountiesInRadius(lat, lng, radius, primaryCounty);
+            gisActiveCounties = counties;
+
+            const linksContainer = document.getElementById('gisPortalLinks');
+            const listEl = document.getElementById('gisPortalList');
+
+            if (counties.length === 0) {
+                linksContainer.style.display = 'none';
+                return;
+            }
+
+            const linkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+
+            listEl.innerHTML = counties.map(c => {
+                const cssClass = c.isPrimary ? 'primary' : 'secondary';
+                const label = c.isPrimary ? `${c.county} (Primary)` : c.county;
+                return `<a href="${c.url}" target="_blank" rel="noopener" class="gis-portal-link ${cssClass}">${linkIcon} ${label}</a>`;
+            }).join('');
+
+            linksContainer.style.display = 'flex';
+        }
+
+        function resetGisFilters() {
+            document.getElementById('gisRadius').value = '10';
+            document.getElementById('gisMinAcres').value = '';
+            document.getElementById('gisMaxAcres').value = '';
+            document.getElementById('gisMinPrice').value = '';
+            document.getElementById('gisMaxPrice').value = '';
+            document.getElementById('gisOwnerType').value = 'all';
+            document.getElementById('gisTaxStatus').value = 'all';
+            document.getElementById('gisWaterDistrict').value = 'all';
+            document.getElementById('gisHomestead').value = 'all';
+            document.getElementById('gisRoadAccess').value = 'all';
+            document.getElementById('gisTopography').value = 'all';
+            document.getElementById('gisLastSale').value = 'all';
+
+            // Reset zoning checks
+            document.querySelectorAll('#gisZoningChecks input').forEach(cb => {
+                cb.checked = cb.value === 'commercial' || cb.value === 'resort';
+            });
+        }
+
+        // Generate simulated GIS property data based on filters
+        function searchGisProperties() {
+            if (!gisSelectedLocation) {
+                alert('Please select a city or zip code first.');
+                return;
+            }
+
+            const radius = parseFloat(document.getElementById('gisRadius').value);
+            const minAcres = parseFloat(document.getElementById('gisMinAcres').value) || 0;
+            const maxAcres = parseFloat(document.getElementById('gisMaxAcres').value) || Infinity;
+            const minPrice = parseFloat(document.getElementById('gisMinPrice').value) || 0;
+            const maxPrice = parseFloat(document.getElementById('gisMaxPrice').value) || Infinity;
+            const ownerType = document.getElementById('gisOwnerType').value;
+            const taxStatus = document.getElementById('gisTaxStatus').value;
+            const waterDistrict = document.getElementById('gisWaterDistrict').value;
+            const homestead = document.getElementById('gisHomestead').value;
+            const roadAccess = document.getElementById('gisRoadAccess').value;
+            const topography = document.getElementById('gisTopography').value;
+            const lastSale = document.getElementById('gisLastSale').value;
+
+            const selectedZoning = [];
+            document.querySelectorAll('#gisZoningChecks input:checked').forEach(cb => selectedZoning.push(cb.value));
+
+            // Generate simulated data (in production, this would call a real GIS API)
+            const zoningTypes = {
+                'commercial': ['C-1 General Commercial', 'C-2 Highway Commercial', 'C-3 Heavy Commercial'],
+                'resort': ['RR Resort Residential', 'CR Commercial Resort', 'PR Planned Resort'],
+                'mixed-use': ['MU Mixed Use', 'MU-1 Urban Mixed', 'MU-2 Suburban Mixed'],
+                'planned-development': ['PAD Planned Area Dev', 'PUD Planned Unit Dev'],
+                'agricultural': ['AG-1 Agricultural', 'AG-5 Ranch Agricultural'],
+                'residential': ['R-1 Single Family', 'R-2 Multi-Family', 'R-3 High Density'],
+                'industrial': ['I-1 Light Industrial', 'I-2 Heavy Industrial'],
+                'unzoned': ['UZ Unzoned', 'NZ No Zoning Required']
+            };
+
+            const firstNames = ['James', 'Robert', 'Patricia', 'Jennifer', 'Michael', 'William', 'Elizabeth', 'David', 'Richard', 'Susan', 'Thomas', 'Charles', 'Margaret', 'Daniel', 'George'];
+            const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Anderson', 'Taylor', 'Thomas', 'Moore', 'Jackson'];
+            const corpNames = ['Red Rock Holdings LLC', 'Desert Capital Partners', 'Arizona Land Trust Co', 'Sonoran Development Group', 'Copper State Investments', 'Verde Valley Properties LLC', 'Canyon Creek Holdings', 'Southwest Realty Partners', 'Prescott Land Company', 'Oak Creek Ventures LLC'];
+
+            const ownerTypes = ['individual', 'corporate', 'trust', 'government'];
+
+            // Seed random from location for reproducibility
+            let seed = gisSelectedLocation.zip.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+            function seededRandom() {
+                seed = (seed * 16807 + 0) % 2147483647;
+                return (seed - 1) / 2147483646;
+            }
+
+            const totalParcels = Math.floor(seededRandom() * 800) + 200;
+            const properties = [];
+
+            for (let i = 0; i < totalParcels; i++) {
+                const dist = seededRandom() * radius * 0.95 + radius * 0.05;
+                const acres = seededRandom() < 0.3 ? seededRandom() * 500 + 20 : seededRandom() * 50 + 1;
+                const pricePerAcre = 5000 + seededRandom() * 95000;
+                const assessedValue = Math.round(acres * pricePerAcre);
+                const oType = ownerTypes[Math.floor(seededRandom() * ownerTypes.length)];
+                const zCategory = selectedZoning.length > 0 ? selectedZoning[Math.floor(seededRandom() * selectedZoning.length)] : 'commercial';
+                const zCodes = zoningTypes[zCategory] || zoningTypes['commercial'];
+                const zCode = zCodes[Math.floor(seededRandom() * zCodes.length)];
+                const hasWater = seededRandom() > 0.3;
+                const isHomestead = oType === 'individual' && seededRandom() > 0.7;
+                const hasPavedRoad = seededRandom() > 0.25;
+                const hasAnyRoad = hasPavedRoad || seededRandom() > 0.15;
+                const topo = seededRandom() < 0.3 ? 'flat' : seededRandom() < 0.6 ? 'gentle-slope' : 'hilly';
+                const isTaxDelinquent = seededRandom() < 0.08;
+
+                const yearsAgo = Math.floor(seededRandom() * 30);
+                const saleYear = 2026 - yearsAgo;
+                const saleMonth = Math.floor(seededRandom() * 12) + 1;
+                const lastSaleDate = yearsAgo >= 30 ? null : `${saleYear}-${String(saleMonth).padStart(2,'0')}-01`;
+
+                let ownerName;
+                if (oType === 'corporate') {
+                    ownerName = corpNames[Math.floor(seededRandom() * corpNames.length)];
+                } else if (oType === 'government') {
+                    ownerName = ['State of Arizona', 'US Forest Service', 'Yavapai County', 'City of Sedona', 'Bureau of Land Management'][Math.floor(seededRandom() * 5)];
+                } else if (oType === 'trust') {
+                    ownerName = `${lastNames[Math.floor(seededRandom() * lastNames.length)]} Family Trust`;
+                } else {
+                    ownerName = `${firstNames[Math.floor(seededRandom() * firstNames.length)]} ${lastNames[Math.floor(seededRandom() * lastNames.length)]}`;
+                }
+
+                const parcelNum = `${100 + Math.floor(seededRandom() * 900)}-${10 + Math.floor(seededRandom() * 90)}-${100 + Math.floor(seededRandom() * 900)}${String.fromCharCode(65 + Math.floor(seededRandom() * 6))}`;
+                const streetNum = Math.floor(seededRandom() * 9999) + 100;
+                const streets = ['Red Rock Loop Rd', 'Dry Creek Rd', 'Coffee Pot Dr', 'Jordan Rd', 'Beaver Creek Rd', 'Page Springs Rd', 'Cornville Rd', 'Verde Valley School Rd', 'Chapel Rd', 'Back O Beyond Rd', 'Schnebly Hill Rd', 'Oak Creek Canyon Rd'];
+                const address = `${streetNum} ${streets[Math.floor(seededRandom() * streets.length)]}`;
+
+                // Apply filters
+                if (acres < minAcres || acres > maxAcres) continue;
+                if (assessedValue < minPrice || assessedValue > maxPrice) continue;
+                if (ownerType !== 'all' && oType !== ownerType) continue;
+                if (taxStatus === 'delinquent' && !isTaxDelinquent) continue;
+                if (taxStatus === 'current' && isTaxDelinquent) continue;
+                if (waterDistrict === 'yes' && !hasWater) continue;
+                if (waterDistrict === 'no' && hasWater) continue;
+                if (homestead === 'exclude' && isHomestead) continue;
+                if (homestead === 'only' && !isHomestead) continue;
+                if (roadAccess === 'paved' && !hasPavedRoad) continue;
+                if (roadAccess === 'any-road' && !hasAnyRoad) continue;
+                if (roadAccess === 'no-road' && hasAnyRoad) continue;
+                if (topography !== 'all' && topo !== topography) continue;
+                if (lastSale !== 'all') {
+                    if (lastSale === 'never' && lastSaleDate !== null) continue;
+                    if (lastSale !== 'never') {
+                        if (lastSaleDate === null) continue;
+                        if (yearsAgo > parseInt(lastSale)) continue;
+                    }
+                }
+
+                properties.push({
+                    parcel: parcelNum,
+                    owner: ownerName,
+                    ownerType: oType,
+                    address: address,
+                    acreage: Math.round(acres * 100) / 100,
+                    zoningCode: zCode,
+                    zoningCategory: zCategory,
+                    assessedValue: assessedValue,
+                    distance: Math.round(dist * 100) / 100,
+                    lastSaleDate: lastSaleDate,
+                    taxDelinquent: isTaxDelinquent,
+                    hasWater: hasWater,
+                    isHomestead: isHomestead,
+                    hasPavedRoad: hasPavedRoad,
+                    topography: topo,
+                    contact: oType === 'individual' || oType === 'trust' ? `(${Math.floor(seededRandom()*900)+100}) ${Math.floor(seededRandom()*900)+100}-${Math.floor(seededRandom()*9000)+1000}` : 'N/A'
+                });
+            }
+
+            gisAllResults = properties;
+            gisCurrentPage = 1;
+            sortGisResults();
+        }
+
+        function sortGisResults() {
+            const sortBy = document.getElementById('gisSortBy').value;
+
+            gisAllResults.sort((a, b) => {
+                switch(sortBy) {
+                    case 'distance': return a.distance - b.distance;
+                    case 'acreage-desc': return b.acreage - a.acreage;
+                    case 'acreage-asc': return a.acreage - b.acreage;
+                    case 'price-desc': return b.assessedValue - a.assessedValue;
+                    case 'price-asc': return a.assessedValue - b.assessedValue;
+                    case 'sale-date':
+                        const aDate = a.lastSaleDate || '1900-01-01';
+                        const bDate = b.lastSaleDate || '1900-01-01';
+                        return bDate.localeCompare(aDate);
+                    default: return a.distance - b.distance;
+                }
+            });
+
+            gisCurrentPage = 1;
+            renderGisResults();
+        }
+
+        function sortGisBy(field) {
+            const sortMap = {
+                'parcel': 'distance',
+                'owner': 'distance',
+                'address': 'distance',
+                'acreage': 'acreage-desc',
+                'zoning': 'distance',
+                'value': 'price-desc',
+                'lastSale': 'sale-date',
+                'distance': 'distance'
+            };
+            document.getElementById('gisSortBy').value = sortMap[field] || 'distance';
+            sortGisResults();
+        }
+
+        function renderGisResults() {
+            const tbody = document.getElementById('gisResultsBody');
+            const total = gisAllResults.length;
+            const totalPages = Math.ceil(total / GIS_PAGE_SIZE);
+            const start = (gisCurrentPage - 1) * GIS_PAGE_SIZE;
+            const pageItems = gisAllResults.slice(start, start + GIS_PAGE_SIZE);
+
+            // Show/hide elements
+            document.getElementById('gisResultsHeader').style.display = total > 0 ? 'flex' : 'none';
+            document.getElementById('gisResultsContainer').style.display = total > 0 ? 'block' : 'none';
+            document.getElementById('gisPagination').style.display = total > 0 ? 'flex' : 'none';
+            document.getElementById('gisEmptyState').style.display = total === 0 ? 'block' : 'none';
+
+            // Update count
+            document.getElementById('gisResultCount').textContent = total.toLocaleString();
+            const radius = document.getElementById('gisRadius').value;
+            document.getElementById('gisResultsMeta').textContent = `within ${radius} miles of ${gisSelectedLocation?.name || ''}`;
+
+            // Update pagination
+            document.getElementById('gisPageInfo').textContent = `Page ${gisCurrentPage} of ${totalPages}`;
+            document.getElementById('gisPrevBtn').disabled = gisCurrentPage <= 1;
+            document.getElementById('gisNextBtn').disabled = gisCurrentPage >= totalPages;
+
+            // Render rows
+            tbody.innerHTML = pageItems.map((p, i) => {
+                const zoningClass = {
+                    'commercial': 'gis-zoning-commercial',
+                    'resort': 'gis-zoning-resort',
+                    'mixed-use': 'gis-zoning-mixed',
+                    'planned-development': 'gis-zoning-planned',
+                    'agricultural': 'gis-zoning-agricultural',
+                    'residential': 'gis-zoning-residential',
+                    'industrial': 'gis-zoning-industrial',
+                    'unzoned': 'gis-zoning-unzoned'
+                }[p.zoningCategory] || 'gis-zoning-commercial';
+
+                return `
+                    <tr>
+                        <td><span class="gis-parcel-link">${p.parcel}</span></td>
+                        <td>
+                            <span class="gis-owner-name">${p.owner}</span>
+                            <span class="gis-owner-type">${p.ownerType.charAt(0).toUpperCase() + p.ownerType.slice(1)}${p.taxDelinquent ? ' · <span style="color:#dc2626;font-weight:600;">Tax Delinquent</span>' : ''}</span>
+                        </td>
+                        <td>${p.address}</td>
+                        <td><strong>${p.acreage.toLocaleString()}</strong> ac</td>
+                        <td><span class="gis-zoning-badge ${zoningClass}">${p.zoningCode}</span></td>
+                        <td class="gis-value-cell">$${p.assessedValue.toLocaleString()}</td>
+                        <td>${p.lastSaleDate ? p.lastSaleDate.substring(0, 7) : '<span style="color:#94a3b8;">Never</span>'}</td>
+                        <td class="gis-distance-cell">${p.distance} mi</td>
+                        <td><button class="gis-detail-btn" onclick='showGisDetail(${JSON.stringify(p).replace(/'/g, "&#39;")})'>View</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function gisChangePage(dir) {
+            const totalPages = Math.ceil(gisAllResults.length / GIS_PAGE_SIZE);
+            gisCurrentPage = Math.max(1, Math.min(totalPages, gisCurrentPage + dir));
+            renderGisResults();
+            document.getElementById('gisResultsContainer').scrollTop = 0;
+        }
+
+        function showGisDetail(property) {
+            const modal = document.getElementById('gisDetailModal');
+            const content = document.getElementById('gisDetailBody');
+
+            content.innerHTML = `
+                <div class="gis-detail-header">
+                    <div>
+                        <h3>Parcel ${property.parcel}</h3>
+                        <span style="color:#64748b;">${property.address}</span>
+                    </div>
+                    <button class="gis-detail-close" onclick="closeGisDetail()">✕</button>
+                </div>
+                <div class="gis-detail-grid">
+                    <div class="gis-detail-item">
+                        <label>Owner</label>
+                        <span>${property.owner}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Owner Type</label>
+                        <span>${property.ownerType.charAt(0).toUpperCase() + property.ownerType.slice(1)}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Contact</label>
+                        <span>${property.contact}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Acreage</label>
+                        <span>${property.acreage.toLocaleString()} acres</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Zoning</label>
+                        <span>${property.zoningCode}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Assessed Value</label>
+                        <span>$${property.assessedValue.toLocaleString()}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Price per Acre</label>
+                        <span>$${Math.round(property.assessedValue / property.acreage).toLocaleString()}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Distance</label>
+                        <span>${property.distance} miles</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Last Sale</label>
+                        <span>${property.lastSaleDate || 'Never Sold'}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Tax Status</label>
+                        <span style="color:${property.taxDelinquent ? '#dc2626' : '#059669'};font-weight:600;">${property.taxDelinquent ? 'DELINQUENT' : 'Current'}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Water District</label>
+                        <span>${property.hasWater ? '✓ Yes' : '✗ No'}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Road Access</label>
+                        <span>${property.hasPavedRoad ? 'Paved Road' : 'Unpaved / Limited'}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Topography</label>
+                        <span>${property.topography === 'flat' ? 'Flat' : property.topography === 'gentle-slope' ? 'Gentle Slope' : 'Hilly / Mountainous'}</span>
+                    </div>
+                    <div class="gis-detail-item">
+                        <label>Homestead</label>
+                        <span>${property.isHomestead ? 'Yes (Owner-Occupied)' : 'No'}</span>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeGisDetail() {
+            document.getElementById('gisDetailModal').classList.remove('active');
         }
 
         // Store current location and raw scores
@@ -5811,7 +6323,7 @@
             // Initialize rankings filters dropdown
             initRankingsFilters();
             // Initialize REV Management
-            initRevManagement();
+            initGisSearch();
             // Calculate all city scores based on default weights
             recalculateAllCityScores();
             // Update category weight summary
@@ -6782,5 +7294,10 @@ Always be specific with data - cite actual scores and rankings from the database
             if (resortCountEl) resortCountEl.textContent = (typeof resorts !== 'undefined' ? resorts.length : 0).toLocaleString();
         });
     </script>
+
+    <!-- GIS Detail Modal -->
+    <div class="gis-detail-modal" id="gisDetailModal" onclick="if(event.target===this)closeGisDetail()">
+        <div class="gis-detail-content" id="gisDetailBody"></div>
+    </div>
 </body>
 </html>
