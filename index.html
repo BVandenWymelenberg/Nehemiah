@@ -3642,18 +3642,13 @@
                 },
                 maxRecords: 2000
             },
-            'Coconino County, AZ': {
-                parcelsUrl: 'https://webmaps.coconino.az.gov/arcgis/rest/services/ParcelOwnerInfo/FeatureServer/0/query',
-                fieldMap: {
-                    parcel: 'APN',
-                    owner: 'OWNER_NAME',
-                    address: 'SITUS_ADDRESS',
-                    acreage: 'ACREAGE',
-                    zoning: 'ZONING',
-                    city: 'SITUS_CITY'
-                },
-                maxRecords: 2000
-            },
+            // Coconino County API is currently unreliable (server timeouts)
+            // Parcel data can still be browsed at: https://gismaps.coconino.az.gov/parcelviewer/
+            // 'Coconino County, AZ': {
+            //     parcelsUrl: 'https://webmaps.coconino.az.gov/arcgis/rest/services/ParcelOwnerInfo/FeatureServer/0/query',
+            //     fieldMap: { parcel: 'APN', owner: 'OWNER_NAME', address: 'SITUS_ADDRESS', acreage: 'ACREAGE', zoning: 'ZONING', city: 'SITUS_CITY' },
+            //     maxRecords: 2000
+            // },
             'Maricopa County, AZ': {
                 parcelsUrl: 'https://gis.mcassessor.maricopa.gov/arcgis/rest/services/Parcels/MapServer/0/query',
                 fieldMap: {
@@ -3770,7 +3765,14 @@
             });
 
             try {
-                const response = await fetch(`${apiConfig.parcelsUrl}?${params.toString()}`);
+                // Add 15-second timeout to prevent hanging on slow county servers
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                const response = await fetch(`${apiConfig.parcelsUrl}?${params.toString()}`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
 
@@ -3846,7 +3848,10 @@
                 return { properties, error: null, totalReturned: features.length };
             } catch (err) {
                 console.error(`Error fetching ${countyKey}:`, err);
-                return { properties: [], error: `${countyKey}: ${err.message}` };
+                const msg = err.name === 'AbortError'
+                    ? `${countyKey}: Request timed out (server too slow)`
+                    : `${countyKey}: ${err.message}`;
+                return { properties: [], error: msg };
             }
         }
 
@@ -4058,11 +4063,18 @@
                 .filter(c => countyAPIs[c.gisKey]) // Only counties with API configs
                 .map(c => c.gisKey);
 
+            const countiesWithoutAPI = gisActiveCounties
+                .filter(c => !countyAPIs[c.gisKey])
+                .map(c => c.county);
+
             if (countiesToQuery.length === 0) {
                 document.getElementById('gisLoadingState').style.display = 'none';
                 document.getElementById('gisErrorState').style.display = 'block';
                 document.getElementById('gisErrorTitle').textContent = 'No API Available';
-                document.getElementById('gisErrorMessage').textContent = 'No ArcGIS API is configured for the counties in this search area. Currently supported: Yavapai County, Coconino County, Maricopa County.';
+                const portalLinks = gisActiveCounties.map(c =>
+                    `<a href="${countyGISPortals[c.gisKey] || '#'}" target="_blank" rel="noopener" style="color:#2563eb;">${c.county} GIS Portal</a>`
+                ).join(', ');
+                document.getElementById('gisErrorMessage').innerHTML = `No live ArcGIS API is available for the counties in this area. Currently supported: Yavapai County. You can browse parcels directly: ${portalLinks}`;
                 return;
             }
 
@@ -4112,6 +4124,19 @@
                 gisAllResults = allProperties;
                 gisCurrentPage = 1;
                 sortGisResults();
+
+                // Show note about counties without API data
+                if (countiesWithoutAPI.length > 0 || errors.length > 0) {
+                    const noteEl = document.getElementById('gisResultsMeta');
+                    let note = noteEl.textContent;
+                    if (countiesWithoutAPI.length > 0) {
+                        note += ` · Note: ${countiesWithoutAPI.join(', ')} data not available via API — browse their GIS portal directly`;
+                    }
+                    if (errors.length > 0) {
+                        note += ` · ${errors.join('; ')}`;
+                    }
+                    noteEl.textContent = note;
+                }
 
             } catch (err) {
                 document.getElementById('gisLoadingState').style.display = 'none';
