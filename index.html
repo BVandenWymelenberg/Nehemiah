@@ -3707,7 +3707,7 @@
         }
 
         // JSONP fetch for ArcGIS REST APIs (bypasses CORS/Cloudflare)
-        function fetchJsonp(url, timeoutMs = 20000) {
+        function fetchJsonp(url, timeoutMs = 30000) {
             return new Promise((resolve, reject) => {
                 const callbackName = '_arcgis_cb_' + Math.random().toString(36).substr(2, 9);
                 const script = document.createElement('script');
@@ -3799,7 +3799,8 @@
                 outSR: '4326',
                 spatialRel: 'esriSpatialRelIntersects',
                 returnGeometry: 'true',
-                resultRecordCount: String(apiConfig.maxRecords),
+                maxAllowableOffset: '0.001',
+                resultRecordCount: String(Math.min(apiConfig.maxRecords, 500)),
                 f: 'json'
             });
 
