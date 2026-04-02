@@ -2046,6 +2046,52 @@
             box-shadow: 0 2px 8px rgba(184,134,11,0.3);
         }
 
+        .gis-loading-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .gis-loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: gis-spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes gis-spin {
+            to { transform: rotate(360deg); }
+        }
+        .gis-loading-state h3 {
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .gis-loading-state p {
+            color: #64748b;
+        }
+        .gis-error-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .gis-error-state h3 {
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+        .gis-error-state p {
+            color: #64748b;
+        }
+        .gis-county-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #475569;
+            white-space: nowrap;
+        }
+
         .gis-link-btn {
             display: inline-block;
             padding: 6px 14px;
@@ -2917,44 +2963,6 @@
                                 <option value="delinquent">Delinquent (Motivated Sellers)</option>
                             </select>
                         </div>
-                        <!-- Water District -->
-                        <div class="gis-filter-group">
-                            <label>Water District</label>
-                            <select id="gisWaterDistrict">
-                                <option value="all">All</option>
-                                <option value="yes">Has Water District</option>
-                                <option value="no">No Water District</option>
-                            </select>
-                        </div>
-                        <!-- Homestead -->
-                        <div class="gis-filter-group">
-                            <label>Homestead Status</label>
-                            <select id="gisHomestead">
-                                <option value="all">All</option>
-                                <option value="exclude">Exclude Homestead</option>
-                                <option value="only">Homestead Only</option>
-                            </select>
-                        </div>
-                        <!-- Road Access -->
-                        <div class="gis-filter-group">
-                            <label>Road Frontage / Access</label>
-                            <select id="gisRoadAccess">
-                                <option value="all">All</option>
-                                <option value="paved">Paved Road</option>
-                                <option value="any-road">Any Road Access</option>
-                                <option value="no-road">No Road (Remote)</option>
-                            </select>
-                        </div>
-                        <!-- Topography -->
-                        <div class="gis-filter-group">
-                            <label>Topography</label>
-                            <select id="gisTopography">
-                                <option value="all">All</option>
-                                <option value="flat">Flat</option>
-                                <option value="gentle-slope">Gentle Slope</option>
-                                <option value="hilly">Hilly / Mountainous</option>
-                            </select>
-                        </div>
                         <!-- Last Sale -->
                         <div class="gis-filter-group">
                             <label>Last Sale Date</label>
@@ -3004,6 +3012,7 @@
                                 <th class="gis-th-sortable" onclick="sortGisBy('distance')">Distance</th>
                                 <th>Details</th>
                                 <th>GIS Link</th>
+                                <th>County</th>
                             </tr>
                         </thead>
                         <tbody id="gisResultsBody">
@@ -3018,11 +3027,25 @@
                     <button class="gis-page-btn" onclick="gisChangePage(1)" id="gisNextBtn">Next →</button>
                 </div>
 
+                <!-- Loading State -->
+                <div class="gis-loading-state" id="gisLoadingState" style="display:none;">
+                    <div class="gis-loading-spinner"></div>
+                    <h3 id="gisLoadingMessage">Fetching real parcel data...</h3>
+                    <p id="gisLoadingDetail">Querying county GIS databases...</p>
+                </div>
+
+                <!-- Error State -->
+                <div class="gis-error-state" id="gisErrorState" style="display:none;">
+                    <div class="gis-empty-icon">⚠️</div>
+                    <h3 id="gisErrorTitle">Unable to fetch data</h3>
+                    <p id="gisErrorMessage"></p>
+                </div>
+
                 <!-- Empty State -->
                 <div class="gis-empty-state" id="gisEmptyState">
                     <div class="gis-empty-icon">🗺️</div>
                     <h3>Search County GIS Records</h3>
-                    <p>Enter a city or zip code above, set your filters, and search for parcels matching your criteria. Data is sourced from county GIS portals including assessor records, zoning, and ownership information.</p>
+                    <p>Enter a city or zip code above, set your filters, and search for parcels matching your criteria. Real data is fetched live from county ArcGIS databases including assessor records, zoning, and ownership information.</p>
                 </div>
             </div>
         </div>
@@ -3579,7 +3602,7 @@
 
         // ============ GIS DATA TAB ============
 
-        // County GIS portals by state/county
+        // County GIS portals and ArcGIS REST API endpoints
         const countyGISPortals = {
             'Yavapai County, AZ': 'https://gis.yavapaiaz.gov/v4/map.aspx?search=',
             'Maricopa County, AZ': 'https://maps.mcassessor.maricopa.gov/',
@@ -3598,6 +3621,53 @@
             'default': 'https://www.google.com/maps'
         };
 
+        // ArcGIS REST API configurations per county
+        const countyAPIs = {
+            'Yavapai County, AZ': {
+                parcelsUrl: 'https://gis.yavapaiaz.gov/ArcGIS/rest/services/Property/MapServer/4/query',
+                salesUrl: 'https://gis.yavapaiaz.gov/ArcGIS/rest/services/Property/MapServer/7/query',
+                fieldMap: {
+                    parcel: 'PARLABEL',
+                    owner: 'NAME',
+                    address: 'SITUS_ADD_DOR',
+                    acreage: 'ACRE_DEED',
+                    zoning: 'ZONING',
+                    city: 'CITY'
+                },
+                salesFieldMap: {
+                    parcel: 'PARLABEL',
+                    saleDate: 'SALEDATE',
+                    salePrice: 'SALEPRICE',
+                    saleYear: 'SALEYEAR'
+                },
+                maxRecords: 2000
+            },
+            'Coconino County, AZ': {
+                parcelsUrl: 'https://webmaps.coconino.az.gov/arcgis/rest/services/ParcelOwnerInfo/FeatureServer/0/query',
+                fieldMap: {
+                    parcel: 'APN',
+                    owner: 'OWNER_NAME',
+                    address: 'SITUS_ADDRESS',
+                    acreage: 'ACREAGE',
+                    zoning: 'ZONING',
+                    city: 'SITUS_CITY'
+                },
+                maxRecords: 2000
+            },
+            'Maricopa County, AZ': {
+                parcelsUrl: 'https://gis.mcassessor.maricopa.gov/arcgis/rest/services/Parcels/MapServer/0/query',
+                fieldMap: {
+                    parcel: 'APN',
+                    owner: 'OWNER_NAME',
+                    address: 'SITUS_ADDRESS',
+                    acreage: 'SHAPE_Area',
+                    zoning: 'MCR_LANDUSE',
+                    city: 'SITUS_CITY'
+                },
+                maxRecords: 2000
+            }
+        };
+
         // Build a GIS parcel search URL for a specific county and parcel number
         function buildGisParcelUrl(countyGisKey, parcelNum) {
             const baseUrl = countyGISPortals[countyGisKey] || countyGISPortals['default'];
@@ -3612,6 +3682,171 @@
                     return baseUrl + '?parcel=' + encodeURIComponent(parcelNum);
                 default:
                     return baseUrl;
+            }
+        }
+
+        // Map zoning codes to categories
+        function mapZoningCategory(code) {
+            if (!code) return 'unzoned';
+            const c = code.toUpperCase().trim();
+            if (/^(C|CR|CC|CB|CS|CG|CN|CO|CL|CBD|B|BG|BC)/.test(c)) return 'commercial';
+            if (/^(R|RS|RM|RR|RCU|SFR|MFR|MH)/.test(c)) return 'residential';
+            if (/^(I|M|MP|IP|IL|IG|IH)/.test(c)) return 'industrial';
+            if (/^(A|AG|RA|RU|AR)/.test(c)) return 'agricultural';
+            if (/^(PD|PAD|PUD|MU|MX|MPC)/.test(c)) return 'planned-development';
+            if (/^(REC|RES|RESORT|T|TC|TR)/.test(c)) return 'resort';
+            if (/^(OS|P|PK|POS|G|GR)/.test(c)) return 'open-space';
+            if (c === 'INC' || c === 'INC.') return 'commercial'; // Incorporated - treat as commercial
+            return 'commercial'; // Default to commercial for unknown codes
+        }
+
+        // Calculate distance between two lat/lng points in miles
+        function haversineDistance(lat1, lng1, lat2, lng2) {
+            const R = 3958.8; // Earth radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        // Fetch real parcel data from a county's ArcGIS REST API
+        async function fetchCountyParcels(countyKey, centerLat, centerLng, radiusMiles, zoningFilter) {
+            const apiConfig = countyAPIs[countyKey];
+            if (!apiConfig) return { properties: [], error: `No API configured for ${countyKey}` };
+
+            // Convert radius to a bounding box (approximate)
+            const latDelta = radiusMiles / 69.0;
+            const lngDelta = radiusMiles / (69.0 * Math.cos(centerLat * Math.PI / 180));
+            const bbox = {
+                xmin: centerLng - lngDelta,
+                ymin: centerLat - latDelta,
+                xmax: centerLng + lngDelta,
+                ymax: centerLat + latDelta
+            };
+
+            // Build WHERE clause for zoning filter
+            let whereClause = '1=1';
+            if (zoningFilter && zoningFilter.length > 0) {
+                const zoningConditions = zoningFilter.map(z => {
+                    switch(z) {
+                        case 'commercial': return `(${apiConfig.fieldMap.zoning} LIKE 'C%' OR ${apiConfig.fieldMap.zoning} LIKE 'B%' OR ${apiConfig.fieldMap.zoning} = 'INC')`;
+                        case 'resort': return `(${apiConfig.fieldMap.zoning} LIKE 'REC%' OR ${apiConfig.fieldMap.zoning} LIKE 'RESORT%' OR ${apiConfig.fieldMap.zoning} LIKE 'T%')`;
+                        case 'mixed-use': return `(${apiConfig.fieldMap.zoning} LIKE 'MU%' OR ${apiConfig.fieldMap.zoning} LIKE 'MX%')`;
+                        case 'planned-development': return `(${apiConfig.fieldMap.zoning} LIKE 'PD%' OR ${apiConfig.fieldMap.zoning} LIKE 'PAD%' OR ${apiConfig.fieldMap.zoning} LIKE 'PUD%')`;
+                        case 'agricultural': return `(${apiConfig.fieldMap.zoning} LIKE 'A%' OR ${apiConfig.fieldMap.zoning} LIKE 'AG%' OR ${apiConfig.fieldMap.zoning} LIKE 'RA%')`;
+                        case 'residential': return `(${apiConfig.fieldMap.zoning} LIKE 'R%' AND ${apiConfig.fieldMap.zoning} NOT LIKE 'REC%' AND ${apiConfig.fieldMap.zoning} NOT LIKE 'RESORT%')`;
+                        case 'industrial': return `(${apiConfig.fieldMap.zoning} LIKE 'I%' OR ${apiConfig.fieldMap.zoning} LIKE 'M%')`;
+                        default: return '1=1';
+                    }
+                });
+                if (zoningConditions.length > 0) {
+                    whereClause = `(${zoningConditions.join(' OR ')})`;
+                }
+            }
+
+            // Acreage filter
+            const minAcres = parseFloat(document.getElementById('gisMinAcres')?.value) || 0;
+            const maxAcres = parseFloat(document.getElementById('gisMaxAcres')?.value) || 999999;
+            if (apiConfig.fieldMap.acreage && apiConfig.fieldMap.acreage !== 'SHAPE_Area') {
+                if (minAcres > 0) whereClause += ` AND ${apiConfig.fieldMap.acreage} >= ${minAcres}`;
+                if (maxAcres < 999999) whereClause += ` AND ${apiConfig.fieldMap.acreage} <= ${maxAcres}`;
+            }
+
+            const outFields = Object.values(apiConfig.fieldMap).join(',');
+
+            const params = new URLSearchParams({
+                where: whereClause,
+                outFields: outFields,
+                geometry: JSON.stringify(bbox),
+                geometryType: 'esriGeometryEnvelope',
+                inSR: '4326',
+                outSR: '4326',
+                spatialRel: 'esriSpatialRelIntersects',
+                returnGeometry: 'true',
+                resultRecordCount: String(apiConfig.maxRecords),
+                f: 'json'
+            });
+
+            try {
+                const response = await fetch(`${apiConfig.parcelsUrl}?${params.toString()}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.message || 'ArcGIS API error');
+                }
+
+                const features = data.features || [];
+                const properties = [];
+
+                for (const feat of features) {
+                    const attrs = feat.attributes || {};
+                    const geom = feat.geometry;
+
+                    // Get centroid for distance calc
+                    let parcelLat = centerLat, parcelLng = centerLng;
+                    if (geom) {
+                        if (geom.x && geom.y) {
+                            parcelLng = geom.x; parcelLat = geom.y;
+                        } else if (geom.rings && geom.rings.length > 0) {
+                            // Calculate centroid from polygon rings
+                            const ring = geom.rings[0];
+                            let sumX = 0, sumY = 0;
+                            for (const pt of ring) { sumX += pt[0]; sumY += pt[1]; }
+                            parcelLng = sumX / ring.length;
+                            parcelLat = sumY / ring.length;
+                        }
+                    }
+
+                    const dist = haversineDistance(centerLat, centerLng, parcelLat, parcelLng);
+                    if (dist > radiusMiles) continue; // Skip if outside actual radius
+
+                    const parcelNum = attrs[apiConfig.fieldMap.parcel] || 'Unknown';
+                    const ownerName = attrs[apiConfig.fieldMap.owner] || 'Unknown';
+                    const address = attrs[apiConfig.fieldMap.address] || attrs[apiConfig.fieldMap.city] || 'N/A';
+                    let acreage = parseFloat(attrs[apiConfig.fieldMap.acreage]) || 0;
+                    // If acreage comes from SHAPE_Area, convert sq meters to acres
+                    if (apiConfig.fieldMap.acreage === 'SHAPE_Area' && acreage > 100) {
+                        acreage = acreage / 4046.86;
+                    }
+                    const zoningCode = attrs[apiConfig.fieldMap.zoning] || 'N/A';
+                    const zoningCategory = mapZoningCategory(zoningCode);
+
+                    // Determine owner type from name
+                    let ownerType = 'individual';
+                    const nameUpper = ownerName.toUpperCase();
+                    if (/\b(LLC|INC|CORP|COMPANY|CO\b|LP|LTD|PARTNERS|ENTERPRISE|GROUP|HOLDINGS|PROPERTIES|DEVELOPMENT|REALTY|INVESTMENTS|ASSOCIATES)/.test(nameUpper)) {
+                        ownerType = 'corporate';
+                    } else if (/\b(TRUST|TRUSTEE|LIVING TRUST|REVOCABLE|IRREVOCABLE|FAMILY TRUST)/.test(nameUpper)) {
+                        ownerType = 'trust';
+                    } else if (/\b(STATE OF|COUNTY|CITY OF|UNITED STATES|US FOREST|BUREAU|BLM|FEDERAL|MUNICIPAL|DISTRICT|SCHOOL|FIRE|DEPT|DEPARTMENT)/.test(nameUpper)) {
+                        ownerType = 'government';
+                    }
+
+                    properties.push({
+                        parcel: parcelNum,
+                        owner: ownerName,
+                        ownerType: ownerType,
+                        address: address,
+                        acreage: Math.round(acreage * 100) / 100,
+                        zoningCode: zoningCode,
+                        zoningCategory: zoningCategory,
+                        assessedValue: 0, // Not always available from parcel layer
+                        distance: Math.round(dist * 100) / 100,
+                        lastSaleDate: null,
+                        county: countyKey,
+                        countyShort: countyKey.replace(', AZ', '').replace(' County', ''),
+                        lat: parcelLat,
+                        lng: parcelLng
+                    });
+                }
+
+                return { properties, error: null, totalReturned: features.length };
+            } catch (err) {
+                console.error(`Error fetching ${countyKey}:`, err);
+                return { properties: [], error: `${countyKey}: ${err.message}` };
             }
         }
 
@@ -3789,10 +4024,6 @@
             document.getElementById('gisMaxPrice').value = '';
             document.getElementById('gisOwnerType').value = 'all';
             document.getElementById('gisTaxStatus').value = 'all';
-            document.getElementById('gisWaterDistrict').value = 'all';
-            document.getElementById('gisHomestead').value = 'all';
-            document.getElementById('gisRoadAccess').value = 'all';
-            document.getElementById('gisTopography').value = 'all';
             document.getElementById('gisLastSale').value = 'all';
 
             // Reset zoning checks
@@ -3801,148 +4032,93 @@
             });
         }
 
-        // Generate simulated GIS property data based on filters
-        function searchGisProperties() {
+        // Fetch real GIS property data from county ArcGIS APIs
+        async function searchGisProperties() {
             if (!gisSelectedLocation) {
                 alert('Please select a city or zip code first.');
                 return;
             }
 
             const radius = parseFloat(document.getElementById('gisRadius').value);
-            const minAcres = parseFloat(document.getElementById('gisMinAcres').value) || 0;
-            const maxAcres = parseFloat(document.getElementById('gisMaxAcres').value) || Infinity;
-            const minPrice = parseFloat(document.getElementById('gisMinPrice').value) || 0;
-            const maxPrice = parseFloat(document.getElementById('gisMaxPrice').value) || Infinity;
             const ownerType = document.getElementById('gisOwnerType').value;
-            const taxStatus = document.getElementById('gisTaxStatus').value;
-            const waterDistrict = document.getElementById('gisWaterDistrict').value;
-            const homestead = document.getElementById('gisHomestead').value;
-            const roadAccess = document.getElementById('gisRoadAccess').value;
-            const topography = document.getElementById('gisTopography').value;
-            const lastSale = document.getElementById('gisLastSale').value;
 
             const selectedZoning = [];
             document.querySelectorAll('#gisZoningChecks input:checked').forEach(cb => selectedZoning.push(cb.value));
 
-            // Generate simulated data (in production, this would call a real GIS API)
-            const zoningTypes = {
-                'commercial': ['C-1 General Commercial', 'C-2 Highway Commercial', 'C-3 Heavy Commercial'],
-                'resort': ['RR Resort Residential', 'CR Commercial Resort', 'PR Planned Resort'],
-                'mixed-use': ['MU Mixed Use', 'MU-1 Urban Mixed', 'MU-2 Suburban Mixed'],
-                'planned-development': ['PAD Planned Area Dev', 'PUD Planned Unit Dev'],
-                'agricultural': ['AG-1 Agricultural', 'AG-5 Ranch Agricultural'],
-                'residential': ['R-1 Single Family', 'R-2 Multi-Family', 'R-3 High Density'],
-                'industrial': ['I-1 Light Industrial', 'I-2 Heavy Industrial'],
-                'unzoned': ['UZ Unzoned', 'NZ No Zoning Required']
-            };
+            // Show loading state
+            document.getElementById('gisLoadingState').style.display = 'block';
+            document.getElementById('gisErrorState').style.display = 'none';
+            document.getElementById('gisEmptyState').style.display = 'none';
+            document.getElementById('gisResultsHeader').style.display = 'none';
+            document.getElementById('gisResultsContainer').style.display = 'none';
+            document.getElementById('gisPagination').style.display = 'none';
 
-            const firstNames = ['James', 'Robert', 'Patricia', 'Jennifer', 'Michael', 'William', 'Elizabeth', 'David', 'Richard', 'Susan', 'Thomas', 'Charles', 'Margaret', 'Daniel', 'George'];
-            const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Anderson', 'Taylor', 'Thomas', 'Moore', 'Jackson'];
-            const corpNames = ['Red Rock Holdings LLC', 'Desert Capital Partners', 'Arizona Land Trust Co', 'Sonoran Development Group', 'Copper State Investments', 'Verde Valley Properties LLC', 'Canyon Creek Holdings', 'Southwest Realty Partners', 'Prescott Land Company', 'Oak Creek Ventures LLC'];
+            // Determine which counties to query
+            const countiesToQuery = gisActiveCounties
+                .filter(c => countyAPIs[c.gisKey]) // Only counties with API configs
+                .map(c => c.gisKey);
 
-            const ownerTypes = ['individual', 'corporate', 'trust', 'government'];
-
-            // Seed random from location for reproducibility
-            let seed = gisSelectedLocation.zip.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-            function seededRandom() {
-                seed = (seed * 16807 + 0) % 2147483647;
-                return (seed - 1) / 2147483646;
+            if (countiesToQuery.length === 0) {
+                document.getElementById('gisLoadingState').style.display = 'none';
+                document.getElementById('gisErrorState').style.display = 'block';
+                document.getElementById('gisErrorTitle').textContent = 'No API Available';
+                document.getElementById('gisErrorMessage').textContent = 'No ArcGIS API is configured for the counties in this search area. Currently supported: Yavapai County, Coconino County, Maricopa County.';
+                return;
             }
 
-            const totalParcels = Math.floor(seededRandom() * 800) + 200;
-            const properties = [];
+            const countyNames = countiesToQuery.map(k => k.replace(', AZ', '')).join(', ');
+            document.getElementById('gisLoadingMessage').textContent = `Fetching real parcel data...`;
+            document.getElementById('gisLoadingDetail').textContent = `Querying ${countyNames} GIS databases...`;
 
-            for (let i = 0; i < totalParcels; i++) {
-                const dist = seededRandom() * radius * 0.95 + radius * 0.05;
-                const acres = seededRandom() < 0.3 ? seededRandom() * 500 + 20 : seededRandom() * 50 + 1;
-                const pricePerAcre = 5000 + seededRandom() * 95000;
-                const assessedValue = Math.round(acres * pricePerAcre);
-                const oType = ownerTypes[Math.floor(seededRandom() * ownerTypes.length)];
-                const zCategory = selectedZoning.length > 0 ? selectedZoning[Math.floor(seededRandom() * selectedZoning.length)] : 'commercial';
-                const zCodes = zoningTypes[zCategory] || zoningTypes['commercial'];
-                const zCode = zCodes[Math.floor(seededRandom() * zCodes.length)];
-                const hasWater = seededRandom() > 0.3;
-                const isHomestead = oType === 'individual' && seededRandom() > 0.7;
-                const hasPavedRoad = seededRandom() > 0.25;
-                const hasAnyRoad = hasPavedRoad || seededRandom() > 0.15;
-                const topo = seededRandom() < 0.3 ? 'flat' : seededRandom() < 0.6 ? 'gentle-slope' : 'hilly';
-                const isTaxDelinquent = seededRandom() < 0.08;
+            try {
+                // Query all active counties in parallel
+                const results = await Promise.allSettled(
+                    countiesToQuery.map(countyKey =>
+                        fetchCountyParcels(countyKey, gisSelectedLocation.lat, gisSelectedLocation.lng, radius, selectedZoning)
+                    )
+                );
 
-                const yearsAgo = Math.floor(seededRandom() * 30);
-                const saleYear = 2026 - yearsAgo;
-                const saleMonth = Math.floor(seededRandom() * 12) + 1;
-                const lastSaleDate = yearsAgo >= 30 ? null : `${saleYear}-${String(saleMonth).padStart(2,'0')}-01`;
+                let allProperties = [];
+                const errors = [];
 
-                let ownerName;
-                if (oType === 'corporate') {
-                    ownerName = corpNames[Math.floor(seededRandom() * corpNames.length)];
-                } else if (oType === 'government') {
-                    ownerName = ['State of Arizona', 'US Forest Service', 'Yavapai County', 'City of Sedona', 'Bureau of Land Management'][Math.floor(seededRandom() * 5)];
-                } else if (oType === 'trust') {
-                    ownerName = `${lastNames[Math.floor(seededRandom() * lastNames.length)]} Family Trust`;
-                } else {
-                    ownerName = `${firstNames[Math.floor(seededRandom() * firstNames.length)]} ${lastNames[Math.floor(seededRandom() * lastNames.length)]}`;
-                }
-
-                const parcelNum = `${100 + Math.floor(seededRandom() * 900)}-${10 + Math.floor(seededRandom() * 90)}-${100 + Math.floor(seededRandom() * 900)}${String.fromCharCode(65 + Math.floor(seededRandom() * 6))}`;
-                const streetNum = Math.floor(seededRandom() * 9999) + 100;
-                const streets = ['Red Rock Loop Rd', 'Dry Creek Rd', 'Coffee Pot Dr', 'Jordan Rd', 'Beaver Creek Rd', 'Page Springs Rd', 'Cornville Rd', 'Verde Valley School Rd', 'Chapel Rd', 'Back O Beyond Rd', 'Schnebly Hill Rd', 'Oak Creek Canyon Rd'];
-                const address = `${streetNum} ${streets[Math.floor(seededRandom() * streets.length)]}`;
-
-                // Apply filters
-                if (acres < minAcres || acres > maxAcres) continue;
-                if (assessedValue < minPrice || assessedValue > maxPrice) continue;
-                if (ownerType !== 'all' && oType !== ownerType) continue;
-                if (taxStatus === 'delinquent' && !isTaxDelinquent) continue;
-                if (taxStatus === 'current' && isTaxDelinquent) continue;
-                if (waterDistrict === 'yes' && !hasWater) continue;
-                if (waterDistrict === 'no' && hasWater) continue;
-                if (homestead === 'exclude' && isHomestead) continue;
-                if (homestead === 'only' && !isHomestead) continue;
-                if (roadAccess === 'paved' && !hasPavedRoad) continue;
-                if (roadAccess === 'any-road' && !hasAnyRoad) continue;
-                if (roadAccess === 'no-road' && hasAnyRoad) continue;
-                if (topography !== 'all' && topo !== topography) continue;
-                if (lastSale !== 'all') {
-                    if (lastSale === 'never' && lastSaleDate !== null) continue;
-                    if (lastSale !== 'never') {
-                        if (lastSaleDate === null) continue;
-                        if (yearsAgo > parseInt(lastSale)) continue;
+                results.forEach((result, i) => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        allProperties = allProperties.concat(result.value.properties);
+                        if (result.value.error) errors.push(result.value.error);
+                    } else if (result.status === 'rejected') {
+                        errors.push(`${countiesToQuery[i]}: ${result.reason}`);
                     }
-                }
-
-                // Assign county based on active counties (distribute properties across them)
-                let assignedCounty = gisActiveCounties.length > 0 ? gisActiveCounties[0].gisKey : 'default';
-                if (gisActiveCounties.length > 1) {
-                    // Distribute some properties to secondary counties based on seeded random
-                    const countyIdx = Math.floor(seededRandom() * gisActiveCounties.length);
-                    assignedCounty = gisActiveCounties[countyIdx].gisKey;
-                }
-
-                properties.push({
-                    parcel: parcelNum,
-                    owner: ownerName,
-                    ownerType: oType,
-                    address: address,
-                    acreage: Math.round(acres * 100) / 100,
-                    zoningCode: zCode,
-                    zoningCategory: zCategory,
-                    assessedValue: assessedValue,
-                    distance: Math.round(dist * 100) / 100,
-                    lastSaleDate: lastSaleDate,
-                    taxDelinquent: isTaxDelinquent,
-                    hasWater: hasWater,
-                    isHomestead: isHomestead,
-                    hasPavedRoad: hasPavedRoad,
-                    topography: topo,
-                    county: assignedCounty,
-                    contact: oType === 'individual' || oType === 'trust' ? `(${Math.floor(seededRandom()*900)+100}) ${Math.floor(seededRandom()*900)+100}-${Math.floor(seededRandom()*9000)+1000}` : 'N/A'
                 });
-            }
 
-            gisAllResults = properties;
-            gisCurrentPage = 1;
-            sortGisResults();
+                // Apply client-side filters
+                if (ownerType !== 'all') {
+                    allProperties = allProperties.filter(p => p.ownerType === ownerType);
+                }
+
+                // Hide loading
+                document.getElementById('gisLoadingState').style.display = 'none';
+
+                if (allProperties.length === 0 && errors.length > 0) {
+                    document.getElementById('gisErrorState').style.display = 'block';
+                    document.getElementById('gisErrorTitle').textContent = 'Error fetching data';
+                    document.getElementById('gisErrorMessage').textContent = errors.join('. ') + '. The county GIS server may be temporarily unavailable. Try again in a moment.';
+                    return;
+                }
+
+                if (errors.length > 0) {
+                    console.warn('Some county queries had errors:', errors);
+                }
+
+                gisAllResults = allProperties;
+                gisCurrentPage = 1;
+                sortGisResults();
+
+            } catch (err) {
+                document.getElementById('gisLoadingState').style.display = 'none';
+                document.getElementById('gisErrorState').style.display = 'block';
+                document.getElementById('gisErrorTitle').textContent = 'Error fetching data';
+                document.getElementById('gisErrorMessage').textContent = err.message + '. Check your internet connection and try again.';
+            }
         }
 
         function sortGisResults() {
@@ -3990,6 +4166,8 @@
             const pageItems = gisAllResults.slice(start, start + GIS_PAGE_SIZE);
 
             // Show/hide elements
+            document.getElementById('gisLoadingState').style.display = 'none';
+            document.getElementById('gisErrorState').style.display = 'none';
             document.getElementById('gisResultsHeader').style.display = total > 0 ? 'flex' : 'none';
             document.getElementById('gisResultsContainer').style.display = total > 0 ? 'block' : 'none';
             document.getElementById('gisPagination').style.display = total > 0 ? 'flex' : 'none';
@@ -4015,7 +4193,8 @@
                     'agricultural': 'gis-zoning-agricultural',
                     'residential': 'gis-zoning-residential',
                     'industrial': 'gis-zoning-industrial',
-                    'unzoned': 'gis-zoning-unzoned'
+                    'unzoned': 'gis-zoning-unzoned',
+                    'open-space': 'gis-zoning-unzoned'
                 }[p.zoningCategory] || 'gis-zoning-commercial';
 
                 return `
@@ -4023,16 +4202,17 @@
                         <td><span class="gis-parcel-link">${p.parcel}</span></td>
                         <td>
                             <span class="gis-owner-name">${p.owner}</span>
-                            <span class="gis-owner-type">${p.ownerType.charAt(0).toUpperCase() + p.ownerType.slice(1)}${p.taxDelinquent ? ' · <span style="color:#dc2626;font-weight:600;">Tax Delinquent</span>' : ''}</span>
+                            <span class="gis-owner-type">${p.ownerType.charAt(0).toUpperCase() + p.ownerType.slice(1)}</span>
                         </td>
                         <td>${p.address}</td>
                         <td><strong>${p.acreage.toLocaleString()}</strong> ac</td>
                         <td><span class="gis-zoning-badge ${zoningClass}">${p.zoningCode}</span></td>
-                        <td class="gis-value-cell">$${p.assessedValue.toLocaleString()}</td>
-                        <td>${p.lastSaleDate ? p.lastSaleDate.substring(0, 7) : '<span style="color:#94a3b8;">Never</span>'}</td>
+                        <td class="gis-value-cell">${p.assessedValue ? '$' + p.assessedValue.toLocaleString() : '<span style="color:#94a3b8;">N/A</span>'}</td>
+                        <td>${p.lastSaleDate ? p.lastSaleDate.substring(0, 7) : '<span style="color:#94a3b8;">N/A</span>'}</td>
                         <td class="gis-distance-cell">${p.distance} mi</td>
                         <td><button class="gis-detail-btn" onclick='showGisDetail(${JSON.stringify(p).replace(/'/g, "&#39;")})'>View</button></td>
                         <td><a href="${buildGisParcelUrl(p.county, p.parcel)}" target="_blank" rel="noopener" class="gis-link-btn">GIS</a></td>
+                        <td><span class="gis-county-badge">${p.countyShort || p.county}</span></td>
                     </tr>
                 `;
             }).join('');
@@ -4067,8 +4247,8 @@
                         <span>${property.ownerType.charAt(0).toUpperCase() + property.ownerType.slice(1)}</span>
                     </div>
                     <div class="gis-detail-item">
-                        <label>Contact</label>
-                        <span>${property.contact}</span>
+                        <label>County</label>
+                        <span>${property.county}</span>
                     </div>
                     <div class="gis-detail-item">
                         <label>Acreage</label>
@@ -4076,15 +4256,7 @@
                     </div>
                     <div class="gis-detail-item">
                         <label>Zoning</label>
-                        <span>${property.zoningCode}</span>
-                    </div>
-                    <div class="gis-detail-item">
-                        <label>Assessed Value</label>
-                        <span>$${property.assessedValue.toLocaleString()}</span>
-                    </div>
-                    <div class="gis-detail-item">
-                        <label>Price per Acre</label>
-                        <span>$${Math.round(property.assessedValue / property.acreage).toLocaleString()}</span>
+                        <span>${property.zoningCode} (${property.zoningCategory})</span>
                     </div>
                     <div class="gis-detail-item">
                         <label>Distance</label>
@@ -4092,27 +4264,11 @@
                     </div>
                     <div class="gis-detail-item">
                         <label>Last Sale</label>
-                        <span>${property.lastSaleDate || 'Never Sold'}</span>
+                        <span>${property.lastSaleDate || 'N/A'}</span>
                     </div>
                     <div class="gis-detail-item">
-                        <label>Tax Status</label>
-                        <span style="color:${property.taxDelinquent ? '#dc2626' : '#059669'};font-weight:600;">${property.taxDelinquent ? 'DELINQUENT' : 'Current'}</span>
-                    </div>
-                    <div class="gis-detail-item">
-                        <label>Water District</label>
-                        <span>${property.hasWater ? '✓ Yes' : '✗ No'}</span>
-                    </div>
-                    <div class="gis-detail-item">
-                        <label>Road Access</label>
-                        <span>${property.hasPavedRoad ? 'Paved Road' : 'Unpaved / Limited'}</span>
-                    </div>
-                    <div class="gis-detail-item">
-                        <label>Topography</label>
-                        <span>${property.topography === 'flat' ? 'Flat' : property.topography === 'gentle-slope' ? 'Gentle Slope' : 'Hilly / Mountainous'}</span>
-                    </div>
-                    <div class="gis-detail-item">
-                        <label>Homestead</label>
-                        <span>${property.isHomestead ? 'Yes (Owner-Occupied)' : 'No'}</span>
+                        <label>GIS Link</label>
+                        <span><a href="${buildGisParcelUrl(property.county, property.parcel)}" target="_blank" rel="noopener" style="color:#2563eb;">View in County GIS →</a></span>
                     </div>
                 </div>
             `;
