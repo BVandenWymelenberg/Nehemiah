@@ -2046,6 +2046,28 @@
             box-shadow: 0 2px 8px rgba(184,134,11,0.3);
         }
 
+        .gis-link-btn {
+            display: inline-block;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .gis-link-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+            color: white;
+            text-decoration: none;
+        }
+
         /* Pagination */
         .gis-pagination {
             display: flex;
@@ -2981,6 +3003,7 @@
                                 <th class="gis-th-sortable" onclick="sortGisBy('lastSale')">Last Sale</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('distance')">Distance</th>
                                 <th>Details</th>
+                                <th>GIS Link</th>
                             </tr>
                         </thead>
                         <tbody id="gisResultsBody">
@@ -3560,7 +3583,7 @@
         const countyGISPortals = {
             'Yavapai County, AZ': 'https://gis.yavapaiaz.gov/v4/map.aspx?search=',
             'Maricopa County, AZ': 'https://maps.mcassessor.maricopa.gov/',
-            'Coconino County, AZ': 'https://gis.coconino.az.gov/GISViewer/',
+            'Coconino County, AZ': 'https://gismaps.coconino.az.gov/parcelviewer/',
             'Pima County, AZ': 'https://gis.pima.gov/',
             'Gila County, AZ': 'https://gis.gilacountyaz.gov/',
             'Navajo County, AZ': 'https://navajocountyaz.gov/gis',
@@ -3574,6 +3597,23 @@
             'Greenlee County, AZ': 'https://www.co.greenlee.az.us/gis',
             'default': 'https://www.google.com/maps'
         };
+
+        // Build a GIS parcel search URL for a specific county and parcel number
+        function buildGisParcelUrl(countyGisKey, parcelNum) {
+            const baseUrl = countyGISPortals[countyGisKey] || countyGISPortals['default'];
+            switch (countyGisKey) {
+                case 'Yavapai County, AZ':
+                    return baseUrl + encodeURIComponent(parcelNum);
+                case 'Coconino County, AZ':
+                    return baseUrl + '?apn=' + encodeURIComponent(parcelNum);
+                case 'Maricopa County, AZ':
+                    return baseUrl + '?q=' + encodeURIComponent(parcelNum);
+                case 'Pima County, AZ':
+                    return baseUrl + '?parcel=' + encodeURIComponent(parcelNum);
+                default:
+                    return baseUrl;
+            }
+        }
 
         // Counties with approximate center lat/lng and radius for boundary detection
         const countyBoundaries = [
@@ -3871,6 +3911,14 @@
                     }
                 }
 
+                // Assign county based on active counties (distribute properties across them)
+                let assignedCounty = gisActiveCounties.length > 0 ? gisActiveCounties[0].gisKey : 'default';
+                if (gisActiveCounties.length > 1) {
+                    // Distribute some properties to secondary counties based on seeded random
+                    const countyIdx = Math.floor(seededRandom() * gisActiveCounties.length);
+                    assignedCounty = gisActiveCounties[countyIdx].gisKey;
+                }
+
                 properties.push({
                     parcel: parcelNum,
                     owner: ownerName,
@@ -3887,6 +3935,7 @@
                     isHomestead: isHomestead,
                     hasPavedRoad: hasPavedRoad,
                     topography: topo,
+                    county: assignedCounty,
                     contact: oType === 'individual' || oType === 'trust' ? `(${Math.floor(seededRandom()*900)+100}) ${Math.floor(seededRandom()*900)+100}-${Math.floor(seededRandom()*9000)+1000}` : 'N/A'
                 });
             }
@@ -3983,6 +4032,7 @@
                         <td>${p.lastSaleDate ? p.lastSaleDate.substring(0, 7) : '<span style="color:#94a3b8;">Never</span>'}</td>
                         <td class="gis-distance-cell">${p.distance} mi</td>
                         <td><button class="gis-detail-btn" onclick='showGisDetail(${JSON.stringify(p).replace(/'/g, "&#39;")})'>View</button></td>
+                        <td><a href="${buildGisParcelUrl(p.county, p.parcel)}" target="_blank" rel="noopener" class="gis-link-btn">GIS</a></td>
                     </tr>
                 `;
             }).join('');
