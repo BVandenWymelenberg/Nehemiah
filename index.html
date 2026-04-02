@@ -3805,21 +3805,18 @@
             });
 
             try {
-                // Try fetch first, fall back to JSONP if CORS blocked
-                let data;
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 30000);
-                    const response = await fetch(`${apiConfig.parcelsUrl}?${params.toString()}`, {
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    data = await response.json();
-                } catch (fetchErr) {
-                    console.warn(`Fetch failed for ${countyKey}, trying JSONP:`, fetchErr.message);
-                    data = await fetchJsonp(`${apiConfig.parcelsUrl}?${params.toString()}`);
-                }
+                // Route through our Vercel proxy to avoid CORS issues
+                const directUrl = `${apiConfig.parcelsUrl}?${params.toString()}`;
+                const proxyUrl = `/api/gis-proxy?url=${encodeURIComponent(directUrl)}`;
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const response = await fetch(proxyUrl, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
 
                 if (data.error) {
                     throw new Error(data.error.message || 'ArcGIS API error');
