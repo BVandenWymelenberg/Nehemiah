@@ -3706,6 +3706,45 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
+        // JSONP fetch for ArcGIS REST APIs (bypasses CORS/Cloudflare)
+        function fetchJsonp(url, timeoutMs = 20000) {
+            return new Promise((resolve, reject) => {
+                const callbackName = '_arcgis_cb_' + Math.random().toString(36).substr(2, 9);
+                const script = document.createElement('script');
+                let timedOut = false;
+
+                const timeout = setTimeout(() => {
+                    timedOut = true;
+                    cleanup();
+                    reject(new Error('Request timed out'));
+                }, timeoutMs);
+
+                function cleanup() {
+                    clearTimeout(timeout);
+                    delete window[callbackName];
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                }
+
+                window[callbackName] = function(data) {
+                    if (!timedOut) {
+                        cleanup();
+                        resolve(data);
+                    }
+                };
+
+                // Replace f=json with f=json and add callback
+                const separator = url.includes('?') ? '&' : '?';
+                script.src = url + separator + 'callback=' + callbackName;
+                script.onerror = function() {
+                    if (!timedOut) {
+                        cleanup();
+                        reject(new Error('Failed to load data from server'));
+                    }
+                };
+                document.head.appendChild(script);
+            });
+        }
+
         // Fetch real parcel data from a county's ArcGIS REST API
         async function fetchCountyParcels(countyKey, centerLat, centerLng, radiusMiles, zoningFilter) {
             const apiConfig = countyAPIs[countyKey];
@@ -3765,16 +3804,8 @@
             });
 
             try {
-                // Add 15-second timeout to prevent hanging on slow county servers
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-                const response = await fetch(`${apiConfig.parcelsUrl}?${params.toString()}`, {
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
+                // Use JSONP to bypass CORS/Cloudflare issues with ArcGIS servers
+                const data = await fetchJsonp(`${apiConfig.parcelsUrl}?${params.toString()}`);
 
                 if (data.error) {
                     throw new Error(data.error.message || 'ArcGIS API error');
@@ -3848,10 +3879,7 @@
                 return { properties, error: null, totalReturned: features.length };
             } catch (err) {
                 console.error(`Error fetching ${countyKey}:`, err);
-                const msg = err.name === 'AbortError'
-                    ? `${countyKey}: Request timed out (server too slow)`
-                    : `${countyKey}: ${err.message}`;
-                return { properties: [], error: msg };
+                return { properties: [], error: `${countyKey}: ${err.message}` };
             }
         }
 
