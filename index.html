@@ -1922,6 +1922,35 @@
             margin-left: 8px;
         }
 
+        .gis-view-toggle {
+            display: flex;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            padding: 2px;
+            border: 1px solid rgba(245,158,11,0.3);
+        }
+        .gis-view-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border: none;
+            background: transparent;
+            color: #92400e;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .gis-view-btn:hover {
+            background: rgba(245,158,11,0.15);
+        }
+        .gis-view-btn.active {
+            background: #f59e0b;
+            color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
         .gis-sort-controls {
             display: flex;
             align-items: center;
@@ -2923,12 +2952,12 @@
                         </div>
                         <!-- Price Min -->
                         <div class="gis-filter-group">
-                            <label>Min Price (Assessed Value)</label>
+                            <label>Min Price (Last Sale Price)</label>
                             <input type="number" id="gisMinPrice" placeholder="e.g. 500000" min="0" step="1000">
                         </div>
                         <!-- Price Max -->
                         <div class="gis-filter-group">
-                            <label>Max Price (Assessed Value)</label>
+                            <label>Max Price (Last Sale Price)</label>
                             <input type="number" id="gisMaxPrice" placeholder="No max">
                         </div>
                         <!-- Zoning -->
@@ -2986,16 +3015,28 @@
                         <span id="gisResultCount">0</span> properties found
                         <span class="gis-results-meta" id="gisResultsMeta"></span>
                     </div>
-                    <div class="gis-sort-controls">
-                        <label>Sort by:</label>
-                        <select id="gisSortBy" onchange="sortGisResults()">
-                            <option value="distance">Distance (Closest)</option>
-                            <option value="acreage-desc">Acreage (Largest)</option>
-                            <option value="acreage-asc">Acreage (Smallest)</option>
-                            <option value="price-desc">Price (Highest)</option>
-                            <option value="price-asc">Price (Lowest)</option>
-                            <option value="sale-date">Last Sale (Most Recent)</option>
-                        </select>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div class="gis-view-toggle">
+                            <button class="gis-view-btn active" id="gisListViewBtn" onclick="switchGisView('list')">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1H2V3zm0 3h12v1H2V6zm0 3h12v1H2V9zm0 3h12v1H2v-1z"/></svg>
+                                List
+                            </button>
+                            <button class="gis-view-btn" id="gisMapViewBtn" onclick="switchGisView('map')">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1L1 3v12l4.5-2L11 13l4-2V1l-4 2L5.5 1zM5 2.5v9l-3 1.33V4.17L5 2.5zm1 9V2.56l4.5 1.94v8.94L6 11.5zM15 2.17v8.66l-3.5 1.75V3.92L15 2.17z"/></svg>
+                                Map
+                            </button>
+                        </div>
+                        <div class="gis-sort-controls">
+                            <label>Sort by:</label>
+                            <select id="gisSortBy" onchange="sortGisResults()">
+                                <option value="distance">Distance (Closest)</option>
+                                <option value="acreage-desc">Acreage (Largest)</option>
+                                <option value="acreage-asc">Acreage (Smallest)</option>
+                                <option value="price-desc">Price (Highest)</option>
+                                <option value="price-asc">Price (Lowest)</option>
+                                <option value="sale-date">Last Sale (Most Recent)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -3009,7 +3050,7 @@
                                 <th class="gis-th-sortable" onclick="sortGisBy('address')">Address</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('acreage')">Acreage</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('zoning')">Zoning</th>
-                                <th class="gis-th-sortable" onclick="sortGisBy('value')">Assessed Value</th>
+                                <th class="gis-th-sortable" onclick="sortGisBy('value')">Last Sale Price</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('lastSale')">Last Sale</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('distance')">Distance</th>
                                 <th>Details</th>
@@ -3021,6 +3062,9 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Map View -->
+                <div id="gisMapView" style="display:none;height:600px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);margin-bottom:16px;"></div>
 
                 <!-- Pagination -->
                 <div class="gis-pagination" id="gisPagination" style="display:none;">
@@ -3802,9 +3846,11 @@
                     acreage: p.acreage || 0,
                     zoningCode: p.zoning || 'N/A',
                     zoningCategory: p.zoningCategory || 'commercial',
-                    assessedValue: 0,
+                    lastSalePrice: p.lastSalePrice || null,
+                    timeAdjustedPrice: p.timeAdjustedPrice || null,
                     distance: p.distance || 0,
-                    lastSaleDate: null,
+                    lastSaleDate: p.lastSaleDate || null,
+                    saleYear: p.saleYear || null,
                     county: `${p.county}, ${p.state}`,
                     countyShort: (p.county || '').replace(' County', ''),
                     lat: p.lat,
@@ -4090,8 +4136,8 @@
                     case 'distance': return a.distance - b.distance;
                     case 'acreage-desc': return b.acreage - a.acreage;
                     case 'acreage-asc': return a.acreage - b.acreage;
-                    case 'price-desc': return b.assessedValue - a.assessedValue;
-                    case 'price-asc': return a.assessedValue - b.assessedValue;
+                    case 'price-desc': return (b.lastSalePrice || 0) - (a.lastSalePrice || 0);
+                    case 'price-asc': return (a.lastSalePrice || 0) - (b.lastSalePrice || 0);
                     case 'sale-date':
                         const aDate = a.lastSaleDate || '1900-01-01';
                         const bDate = b.lastSaleDate || '1900-01-01';
@@ -4126,13 +4172,22 @@
             const start = (gisCurrentPage - 1) * GIS_PAGE_SIZE;
             const pageItems = gisAllResults.slice(start, start + GIS_PAGE_SIZE);
 
-            // Show/hide elements
+            // Show/hide elements based on current view mode
             document.getElementById('gisLoadingState').style.display = 'none';
             document.getElementById('gisErrorState').style.display = 'none';
             document.getElementById('gisResultsHeader').style.display = total > 0 ? 'flex' : 'none';
-            document.getElementById('gisResultsContainer').style.display = total > 0 ? 'block' : 'none';
-            document.getElementById('gisPagination').style.display = total > 0 ? 'flex' : 'none';
             document.getElementById('gisEmptyState').style.display = total === 0 ? 'block' : 'none';
+
+            if (gisCurrentView === 'map') {
+                document.getElementById('gisResultsContainer').style.display = 'none';
+                document.getElementById('gisPagination').style.display = 'none';
+                document.getElementById('gisMapView').style.display = total > 0 ? 'block' : 'none';
+                renderGisMapMarkers();
+            } else {
+                document.getElementById('gisResultsContainer').style.display = total > 0 ? 'block' : 'none';
+                document.getElementById('gisPagination').style.display = total > 0 ? 'flex' : 'none';
+                document.getElementById('gisMapView').style.display = 'none';
+            }
 
             // Update count
             document.getElementById('gisResultCount').textContent = total.toLocaleString();
@@ -4168,8 +4223,8 @@
                         <td>${p.address}</td>
                         <td><strong>${p.acreage.toLocaleString()}</strong> ac</td>
                         <td><span class="gis-zoning-badge ${zoningClass}">${p.zoningCode}</span></td>
-                        <td class="gis-value-cell">${p.assessedValue ? '$' + p.assessedValue.toLocaleString() : '<span style="color:#94a3b8;">N/A</span>'}</td>
-                        <td>${p.lastSaleDate ? p.lastSaleDate.substring(0, 7) : '<span style="color:#94a3b8;">N/A</span>'}</td>
+                        <td class="gis-value-cell">${p.lastSalePrice ? '$' + p.lastSalePrice.toLocaleString() : '<span style="color:#94a3b8;">N/A</span>'}</td>
+                        <td>${p.saleYear ? p.saleYear : '<span style="color:#94a3b8;">N/A</span>'}</td>
                         <td class="gis-distance-cell">${p.distance} mi</td>
                         <td><button class="gis-detail-btn" onclick='showGisDetail(${JSON.stringify(p).replace(/'/g, "&#39;")})'>View</button></td>
                         <td><a href="${p.gisPortalUrl || buildGisParcelUrl(p.county, p.parcel)}" target="_blank" rel="noopener" class="gis-link-btn">GIS</a></td>
@@ -4225,6 +4280,9 @@
                         <label>Distance</label>
                         <span>${property.distance} miles</span>
                     </div>
+                    ${property.lastSalePrice ? `<div class="gis-detail-item"><label>Last Sale Price</label><span style="color:#16a34a;font-weight:600;">$${property.lastSalePrice.toLocaleString()}</span></div>` : ''}
+                    ${property.saleYear ? `<div class="gis-detail-item"><label>Sale Year</label><span>${property.saleYear}</span></div>` : ''}
+                    ${property.timeAdjustedPrice ? `<div class="gis-detail-item"><label>Time-Adjusted Price</label><span>$${property.timeAdjustedPrice.toLocaleString()}</span></div>` : ''}
                     ${property.subdivision ? `<div class="gis-detail-item"><label>Subdivision</label><span>${property.subdivision}</span></div>` : ''}
                     ${property.marketArea ? `<div class="gis-detail-item"><label>Market Area</label><span>${property.marketArea}</span></div>` : ''}
                     ${property.mailingCity ? `<div class="gis-detail-item"><label>Mailing Address</label><span>${property.owner}<br>${property.address || ''}<br>${property.mailingCity || ''}, ${property.mailingState || ''} ${property.mailingZip || ''}</span></div>` : ''}
@@ -4241,6 +4299,135 @@
 
         function closeGisDetail() {
             document.getElementById('gisDetailModal').classList.remove('active');
+        }
+
+        // --- GIS Map View ---
+        let gisMap = null;
+        let gisMarkers = null;
+        let gisCurrentView = 'list';
+
+        const gisZoningColors = {
+            'commercial': '#2563eb',
+            'resort': '#7c3aed',
+            'industrial': '#ea580c',
+            'mixed-use': '#0d9488',
+            'planned-development': '#16a34a',
+            'residential': '#64748b',
+            'agricultural': '#854d0e',
+            'open-space': '#059669',
+            'unzoned': '#94a3b8',
+            'other': '#94a3b8'
+        };
+
+        function switchGisView(view) {
+            gisCurrentView = view;
+            const listBtn = document.getElementById('gisListViewBtn');
+            const mapBtn = document.getElementById('gisMapViewBtn');
+            const tableContainer = document.getElementById('gisResultsContainer');
+            const mapContainer = document.getElementById('gisMapView');
+            const pagination = document.getElementById('gisPagination');
+
+            if (view === 'map') {
+                listBtn.classList.remove('active');
+                mapBtn.classList.add('active');
+                tableContainer.style.display = 'none';
+                pagination.style.display = 'none';
+                mapContainer.style.display = 'block';
+                initGisMap();
+                // Leaflet needs invalidateSize after container becomes visible
+                setTimeout(() => { if (gisMap) gisMap.invalidateSize(); }, 100);
+                renderGisMapMarkers();
+            } else {
+                mapBtn.classList.remove('active');
+                listBtn.classList.add('active');
+                mapContainer.style.display = 'none';
+                tableContainer.style.display = 'block';
+                pagination.style.display = 'flex';
+            }
+        }
+
+        function initGisMap() {
+            if (gisMap) return; // Already initialized
+
+            gisMap = L.map('gisMapView').setView([34.87, -111.76], 10); // Default to Sedona area
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '©OpenStreetMap, ©CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(gisMap);
+
+            gisMarkers = L.layerGroup().addTo(gisMap);
+
+            // Add legend
+            const legend = L.control({ position: 'bottomright' });
+            legend.onAdd = function() {
+                const div = L.DomUtil.create('div', 'gis-map-legend');
+                div.innerHTML = `
+                    <div style="background:rgba(255,255,255,0.95);padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:12px;line-height:1.8;">
+                        <strong style="display:block;margin-bottom:4px;">Zoning</strong>
+                        ${Object.entries(gisZoningColors).filter(([k]) => !['other','unzoned','open-space','agricultural','residential'].includes(k)).map(([cat, color]) =>
+                            `<div><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:6px;"></span>${cat.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>`
+                        ).join('')}
+                    </div>
+                `;
+                return div;
+            };
+            legend.addTo(gisMap);
+        }
+
+        function renderGisMapMarkers() {
+            if (!gisMap || !gisMarkers) return;
+            gisMarkers.clearLayers();
+
+            const results = gisAllResults || [];
+            if (results.length === 0) return;
+
+            const bounds = L.latLngBounds();
+
+            results.forEach(p => {
+                if (!p.lat || !p.lng) return;
+
+                const color = gisZoningColors[p.zoningCategory] || '#94a3b8';
+                // Scale marker size by acreage (min 6, max 18)
+                const radius = Math.min(18, Math.max(6, Math.sqrt(p.acreage || 5) * 2));
+
+                const marker = L.circleMarker([p.lat, p.lng], {
+                    radius: radius,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 1.5,
+                    opacity: 1,
+                    fillOpacity: 0.75
+                });
+
+                const priceStr = p.lastSalePrice ? '$' + p.lastSalePrice.toLocaleString() : 'N/A';
+                const gisUrl = p.gisPortalUrl || '#';
+
+                marker.bindPopup(`
+                    <div style="font-family:system-ui;min-width:200px;">
+                        <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${p.parcel}</div>
+                        <div style="color:#64748b;font-size:12px;margin-bottom:8px;">${p.address}</div>
+                        <table style="font-size:12px;width:100%;border-collapse:collapse;">
+                            <tr><td style="padding:2px 8px 2px 0;color:#64748b;">Owner</td><td style="padding:2px 0;font-weight:500;">${p.owner}</td></tr>
+                            <tr><td style="padding:2px 8px 2px 0;color:#64748b;">Acreage</td><td style="padding:2px 0;font-weight:500;">${(p.acreage || 0).toLocaleString()} ac</td></tr>
+                            <tr><td style="padding:2px 8px 2px 0;color:#64748b;">Zoning</td><td style="padding:2px 0;"><span style="background:${color};color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;">${p.zoningCode}</span></td></tr>
+                            <tr><td style="padding:2px 8px 2px 0;color:#64748b;">Sale Price</td><td style="padding:2px 0;font-weight:500;${p.lastSalePrice ? 'color:#16a34a;' : ''}">${priceStr}</td></tr>
+                            <tr><td style="padding:2px 8px 2px 0;color:#64748b;">Distance</td><td style="padding:2px 0;">${p.distance} mi</td></tr>
+                        </table>
+                        <div style="margin-top:8px;display:flex;gap:8px;">
+                            <a href="${gisUrl}" target="_blank" rel="noopener" style="color:#2563eb;font-size:12px;text-decoration:none;font-weight:500;">View in GIS →</a>
+                            <span style="color:#f59e0b;font-size:12px;cursor:pointer;font-weight:500;" onclick="showGisDetail(${JSON.stringify(p).replace(/"/g, '&quot;')})">Full Details</span>
+                        </div>
+                    </div>
+                `, { maxWidth: 300 });
+
+                marker.addTo(gisMarkers);
+                bounds.extend([p.lat, p.lng]);
+            });
+
+            if (bounds.isValid()) {
+                gisMap.fitBounds(bounds, { padding: [30, 30] });
+            }
         }
 
         // Store current location and raw scores

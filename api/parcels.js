@@ -87,6 +87,8 @@ export default async function handler(req, res) {
         case 'distance': return (a.distance || 9999) - (b.distance || 9999);
         case 'acreage-desc': return (b.acreage || 0) - (a.acreage || 0);
         case 'acreage-asc': return (a.acreage || 0) - (b.acreage || 0);
+        case 'price-desc': return (b.lastSalePrice || 0) - (a.lastSalePrice || 0);
+        case 'price-asc': return (a.lastSalePrice || 0) - (b.lastSalePrice || 0);
         default: return (a.distance || 9999) - (b.distance || 9999);
       }
     });

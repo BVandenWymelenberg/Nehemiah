@@ -1,7 +1,8 @@
 import { put } from '@vercel/blob';
 
-// ArcGIS REST API endpoint for Yavapai County Parcels
-const ARCGIS_BASE = 'https://gis.yavapaiaz.gov/arcgis/rest/services/Parcels/FeatureServer/0/query';
+// ArcGIS REST API endpoints for Yavapai County
+const ARCGIS_PARCELS = 'https://gis.yavapaiaz.gov/arcgis/rest/services/Parcels/FeatureServer/0/query';
+const ARCGIS_SALES = 'https://gis.yavapaiaz.gov/arcgis/rest/services/Property/MapServer/7/query';
 
 // Fields we want from the parcel data
 const OUT_FIELDS = [
@@ -34,18 +35,18 @@ function verifySync(req) {
   return token === process.env.GIS_SYNC_TOKEN;
 }
 
-async function fetchParcels(whereClause, offset = 0) {
+async function fetchFromArcGIS(baseUrl, whereClause, outFields, offset = 0, returnGeometry = true) {
   const params = new URLSearchParams({
     where: whereClause,
-    outFields: OUT_FIELDS,
-    returnGeometry: 'true',
+    outFields: outFields,
+    returnGeometry: String(returnGeometry),
     outSR: '4326',
     resultRecordCount: String(MAX_RECORDS),
     resultOffset: String(offset),
     f: 'json'
   });
 
-  const url = `${ARCGIS_BASE}?${params}`;
+  const url = `${baseUrl}?${params}`;
   console.log(`Fetching: offset=${offset}, where=${whereClause.substring(0, 60)}...`);
 
   const response = await fetch(url, {
@@ -63,6 +64,76 @@ async function fetchParcels(whereClause, offset = 0) {
   }
 
   return data;
+}
+
+// Fetch all pages from an ArcGIS endpoint
+async function fetchAllPages(baseUrl, whereClause, outFields, returnGeometry = true) {
+  let offset = 0;
+  let hasMore = true;
+  const allFeatures = [];
+
+  while (hasMore) {
+    const data = await fetchFromArcGIS(baseUrl, whereClause, outFields, offset, returnGeometry);
+    const features = data.features || [];
+    allFeatures.push(...features);
+
+    hasMore = data.exceededTransferLimit === true;
+    offset += MAX_RECORDS;
+
+    if (offset > MAX_RECORDS * 10) {
+      console.warn('Hit safety limit of 10 pages');
+      hasMore = false;
+    }
+
+    if (hasMore) {
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+
+  return allFeatures;
+}
+
+// Fetch recent sales data and build a lookup by PARLABEL
+async function fetchSalesData(parcelLabels) {
+  const SALES_FIELDS = 'PARLABEL,SALEPRICE,SALEDATE,SALEYEAR,TIMEADJSALEPRICE';
+  const salesMap = new Map();
+
+  // Query in batches of 200 parcel labels to avoid URL length limits
+  const batchSize = 200;
+  for (let i = 0; i < parcelLabels.length; i += batchSize) {
+    const batch = parcelLabels.slice(i, i + batchSize);
+    const inClause = batch.map(l => `'${l}'`).join(',');
+    const where = `PARLABEL IN (${inClause})`;
+
+    try {
+      const features = await fetchAllPages(ARCGIS_SALES, where, SALES_FIELDS, false);
+      for (const f of features) {
+        const a = f.attributes;
+        const label = a.PARLABEL;
+        if (!label) continue;
+
+        // Keep the most recent sale per parcel
+        const existing = salesMap.get(label);
+        if (!existing || (a.SALEYEAR && a.SALEYEAR > (existing.saleYear || 0))) {
+          salesMap.set(label, {
+            lastSalePrice: a.SALEPRICE || null,
+            lastSaleDate: a.SALEDATE || null,
+            saleYear: a.SALEYEAR || null,
+            timeAdjustedPrice: a.TIMEADJSALEPRICE || null
+          });
+        }
+      }
+      console.log(`Sales batch ${Math.floor(i/batchSize)+1}: ${features.length} records`);
+    } catch (err) {
+      console.warn(`Sales batch error (offset ${i}):`, err.message);
+    }
+
+    if (i + batchSize < parcelLabels.length) {
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+
+  return salesMap;
 }
 
 function normalizeFeature(feature) {
@@ -133,36 +204,10 @@ export default async function handler(req, res) {
     const stats = {};
 
     for (const query of QUERIES) {
-      let offset = 0;
-      let hasMore = true;
-      let queryCount = 0;
-
-      while (hasMore) {
-        const data = await fetchParcels(query.where, offset);
-        const features = data.features || [];
-        queryCount += features.length;
-
-        features.forEach(f => {
-          allParcels.push(normalizeFeature(f));
-        });
-
-        hasMore = data.exceededTransferLimit === true;
-        offset += MAX_RECORDS;
-
-        // Safety valve: max 10 pages per query
-        if (offset > MAX_RECORDS * 10) {
-          console.warn('Hit safety limit of 10 pages');
-          hasMore = false;
-        }
-
-        // Be polite: wait 500ms between pages
-        if (hasMore) {
-          await new Promise(r => setTimeout(r, 500));
-        }
-      }
-
-      stats[query.label] = queryCount;
-      console.log(`${query.label}: ${queryCount} parcels`);
+      const features = await fetchAllPages(ARCGIS_PARCELS, query.where, OUT_FIELDS, true);
+      features.forEach(f => allParcels.push(normalizeFeature(f)));
+      stats[query.label] = features.length;
+      console.log(`${query.label}: ${features.length} parcels`);
     }
 
     // Deduplicate by parcelId
@@ -175,6 +220,31 @@ export default async function handler(req, res) {
         uniqueParcels.push(p);
       }
     });
+
+    // Fetch sales data and merge
+    const parcelLabels = uniqueParcels.map(p => p.parcelLabel).filter(Boolean);
+    console.log(`Fetching sales data for ${parcelLabels.length} parcels...`);
+    const salesMap = await fetchSalesData(parcelLabels);
+    let salesMatched = 0;
+
+    uniqueParcels.forEach(p => {
+      const sale = salesMap.get(p.parcelLabel);
+      if (sale) {
+        p.lastSalePrice = sale.lastSalePrice;
+        p.lastSaleDate = sale.lastSaleDate;
+        p.saleYear = sale.saleYear;
+        p.timeAdjustedPrice = sale.timeAdjustedPrice;
+        salesMatched++;
+      } else {
+        p.lastSalePrice = null;
+        p.lastSaleDate = null;
+        p.saleYear = null;
+        p.timeAdjustedPrice = null;
+      }
+    });
+
+    stats['Sales matched'] = salesMatched;
+    console.log(`Sales data matched: ${salesMatched} of ${uniqueParcels.length} parcels`);
 
     // Build the blob payload
     const payload = {
