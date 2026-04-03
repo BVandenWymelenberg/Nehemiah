@@ -93,7 +93,7 @@ export default async function handler(req, res) {
 
     // Pagination
     const pg = parseInt(page) || 1;
-    const ps = Math.min(parseInt(pageSize) || 50, 200);
+    const ps = Math.min(parseInt(pageSize) || 50, 5000);
     const total = parcels.length;
     const totalPages = Math.ceil(total / ps);
     const start = (pg - 1) * ps;
