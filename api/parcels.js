@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await get(BLOB_PATH, { access: 'public' });
+    const result = await get(BLOB_PATH, { access: 'private' });
     if (!result || result.statusCode === 404) {
       return res.status(200).json({
         parcels: [],

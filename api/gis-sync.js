@@ -187,7 +187,7 @@ export default async function handler(req, res) {
 
     // Store in Vercel Blob
     await put(BLOB_PATH, JSON.stringify(payload), {
-      access: 'public',
+      access: 'private',
       contentType: 'application/json',
       addRandomSuffix: false,
       allowOverwrite: true,
