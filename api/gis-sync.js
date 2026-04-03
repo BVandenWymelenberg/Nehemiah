@@ -112,7 +112,7 @@ function normalizeFeature(feature) {
     lng,
     county: 'Yavapai County',
     state: 'AZ',
-    gisPortalUrl: `https://gis.yavapaiaz.gov/v4/map.aspx?search=${a.PARCEL_ID || ''}`
+    gisPortalUrl: `https://gis.yavapaiaz.gov/v4/map.aspx?search=${a.PARLABEL || a.PARCEL_ID || ''}`
   };
 }
 
