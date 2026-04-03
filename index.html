@@ -2601,6 +2601,86 @@
             font-size: 0.85rem;
             color: #92400e;
         }
+        /* Favorites */
+        .gis-fav-star {
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #d1d5db;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            padding: 2px 4px;
+            line-height: 1;
+        }
+        .gis-fav-star:hover { color: #f59e0b; transform: scale(1.2); }
+        .gis-fav-star.active { color: #f59e0b; }
+
+        .fav-group {
+            margin-bottom: 24px;
+        }
+        .fav-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(245,158,11,0.2);
+        }
+        .fav-group-header h3 {
+            font-size: 1rem;
+            color: #92400e;
+            margin: 0;
+        }
+        .fav-group-count {
+            background: rgba(245,158,11,0.15);
+            color: #92400e;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .fav-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.6);
+            border: 1px solid rgba(245,158,11,0.15);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .fav-card:hover {
+            border-color: rgba(245,158,11,0.4);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .fav-card-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 16px;
+            font-size: 0.85rem;
+        }
+        .fav-card-info .fav-label { color: #64748b; }
+        .fav-card-info .fav-value { font-weight: 500; }
+        .fav-card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        .fav-card-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .fav-card-actions a, .fav-card-actions button {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -2608,6 +2688,7 @@
         <div class="nav-tab active" onclick="switchTab('map')">Map View</div>
         <div class="nav-tab" onclick="switchTab('compare')">Compare Properties</div>
         <div class="nav-tab" onclick="switchTab('gis')">GIS DATA</div>
+        <div class="nav-tab" onclick="switchTab('favorites')">★ FAVORITES <span id="favCountBadge" style="background:#f59e0b;color:#fff;border-radius:10px;padding:0 6px;font-size:0.7rem;margin-left:4px;display:none;">0</span></div>
         <div class="nav-tab" onclick="switchTab('rawData')">RAW DATA</div>
         <div class="nav-tab" onclick="switchTab('rankings')">MARKET RANKINGS</div>
         <div class="nav-tab chat-tab" onclick="switchTab('chat')">Chat Me</div>
@@ -3045,6 +3126,7 @@
                     <table class="gis-results-table">
                         <thead>
                             <tr>
+                                <th style="width:36px;">★</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('parcel')">Parcel #</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('owner')">Owner</th>
                                 <th class="gis-th-sortable" onclick="sortGisBy('address')">Address</th>
@@ -3121,6 +3203,34 @@
                         <div class="chat-suggestion" onclick="useSuggestion(this)">Best markets in Colorado under 70 score</div>
                         <div class="chat-suggestion" onclick="useSuggestion(this)">Compare Door County vs Lake Geneva</div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="favoritesTab" class="tab-content">
+            <div class="section-card" style="margin-top:20px;">
+                <h2 style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span style="color:#f59e0b;">★</span> Favorite Properties
+                </h2>
+                <p style="color:#64748b;margin-bottom:20px;">Properties you've starred across all locations. Click the star again to remove.</p>
+
+                <div id="favoritesEmpty" style="text-align:center;padding:40px 20px;color:#94a3b8;">
+                    <div style="font-size:3rem;margin-bottom:12px;">☆</div>
+                    <div style="font-size:1.1rem;font-weight:500;">No favorites yet</div>
+                    <div style="font-size:0.9rem;margin-top:8px;">Search for properties in the GIS Data tab and click the ★ star to save them here.</div>
+                </div>
+
+                <div id="favoritesContent" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <div id="favTotalCount" style="font-weight:600;color:#92400e;"></div>
+                        <select id="favSortBy" onchange="renderFavorites()" style="padding:6px 12px;border:1px solid #f59e0b;border-radius:8px;font-size:0.85rem;cursor:pointer;">
+                            <option value="date-added">Recently Added</option>
+                            <option value="acreage-desc">Acreage (Largest)</option>
+                            <option value="price-desc">Price (Highest)</option>
+                            <option value="location">By Location</option>
+                        </select>
+                    </div>
+                    <div id="favoritesGroups"></div>
                 </div>
             </div>
         </div>
@@ -4215,6 +4325,7 @@
 
                 return `
                     <tr>
+                        <td><button class="gis-fav-star ${isFavorited(p.parcel) ? 'active' : ''}" onclick="toggleFavorite(${JSON.stringify(p).replace(/'/g, '&#39;').replace(/"/g, '&quot;')})" title="Add to favorites">${isFavorited(p.parcel) ? '★' : '☆'}</button></td>
                         <td><span class="gis-parcel-link">${p.parcel}</span></td>
                         <td>
                             <span class="gis-owner-name">${p.owner}</span>
@@ -4414,7 +4525,8 @@
                             <tr><td style="padding:2px 8px 2px 0;color:#64748b;">Sale Price</td><td style="padding:2px 0;font-weight:500;${p.lastSalePrice ? 'color:#16a34a;' : ''}">${priceStr}</td></tr>
                             <tr><td style="padding:2px 8px 2px 0;color:#64748b;">Distance</td><td style="padding:2px 0;">${p.distance} mi</td></tr>
                         </table>
-                        <div style="margin-top:8px;display:flex;gap:8px;">
+                        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                            <span style="cursor:pointer;font-size:16px;color:${isFavorited(p.parcel) ? '#f59e0b' : '#d1d5db'};" onclick="toggleFavorite(${JSON.stringify(p).replace(/"/g, '&quot;')});this.style.color=isFavorited('${p.parcel}')?'#f59e0b':'#d1d5db';this.textContent=isFavorited('${p.parcel}')?'★':'☆';">${isFavorited(p.parcel) ? '★' : '☆'}</span>
                             <a href="${gisUrl}" target="_blank" rel="noopener" style="color:#2563eb;font-size:12px;text-decoration:none;font-weight:500;">View in GIS →</a>
                             <span style="color:#f59e0b;font-size:12px;cursor:pointer;font-weight:500;" onclick="showGisDetail(${JSON.stringify(p).replace(/"/g, '&quot;')})">Full Details</span>
                         </div>
@@ -4429,6 +4541,163 @@
                 gisMap.fitBounds(bounds, { padding: [30, 30] });
             }
         }
+
+        // ============ FAVORITES ============
+        let favoritesData = {}; // { parcelId: { ...property, addedAt, searchLocation } }
+
+        async function loadFavorites() {
+            try {
+                const res = await fetch('/api/favorites');
+                if (res.ok) {
+                    const data = await res.json();
+                    favoritesData = data.favorites || {};
+                }
+            } catch (e) {
+                // Fall back to localStorage
+                try {
+                    favoritesData = JSON.parse(localStorage.getItem('nehemiah-favorites') || '{}');
+                } catch (e2) { favoritesData = {}; }
+            }
+            updateFavBadge();
+        }
+
+        async function saveFavorites() {
+            // Save to localStorage as backup
+            localStorage.setItem('nehemiah-favorites', JSON.stringify(favoritesData));
+            // Save to blob
+            try {
+                await fetch('/api/favorites', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ favorites: favoritesData })
+                });
+            } catch (e) {
+                console.warn('Could not save favorites to server:', e);
+            }
+        }
+
+        function isFavorited(parcelId) {
+            return !!favoritesData[parcelId];
+        }
+
+        function toggleFavorite(property) {
+            const key = property.parcel;
+            if (favoritesData[key]) {
+                delete favoritesData[key];
+            } else {
+                favoritesData[key] = {
+                    ...property,
+                    addedAt: new Date().toISOString(),
+                    searchLocation: gisSelectedLocation ? gisSelectedLocation.name + ', ' + (gisSelectedLocation.state || 'AZ') : 'Unknown'
+                };
+            }
+            saveFavorites();
+            updateFavBadge();
+            // Re-render current view to update star states
+            if (gisAllResults && gisAllResults.length > 0) {
+                renderGisResults();
+            }
+        }
+
+        function updateFavBadge() {
+            const count = Object.keys(favoritesData).length;
+            const badge = document.getElementById('favCountBadge');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline' : 'none';
+            }
+        }
+
+        function renderFavorites() {
+            const favs = Object.values(favoritesData);
+            const emptyEl = document.getElementById('favoritesEmpty');
+            const contentEl = document.getElementById('favoritesContent');
+            const groupsEl = document.getElementById('favoritesGroups');
+
+            if (favs.length === 0) {
+                emptyEl.style.display = 'block';
+                contentEl.style.display = 'none';
+                return;
+            }
+
+            emptyEl.style.display = 'none';
+            contentEl.style.display = 'block';
+
+            // Sort
+            const sortBy = document.getElementById('favSortBy')?.value || 'date-added';
+            switch (sortBy) {
+                case 'date-added':
+                    favs.sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
+                    break;
+                case 'acreage-desc':
+                    favs.sort((a, b) => (b.acreage || 0) - (a.acreage || 0));
+                    break;
+                case 'price-desc':
+                    favs.sort((a, b) => (b.lastSalePrice || 0) - (a.lastSalePrice || 0));
+                    break;
+                case 'location':
+                    favs.sort((a, b) => (a.searchLocation || '').localeCompare(b.searchLocation || ''));
+                    break;
+            }
+
+            document.getElementById('favTotalCount').textContent = `${favs.length} favorite${favs.length !== 1 ? 's' : ''}`;
+
+            // Group by location
+            const groups = {};
+            favs.forEach(f => {
+                const loc = f.searchLocation || f.county || 'Other';
+                if (!groups[loc]) groups[loc] = [];
+                groups[loc].push(f);
+            });
+
+            if (sortBy === 'location') {
+                // Render grouped
+                groupsEl.innerHTML = Object.entries(groups).map(([loc, props]) => `
+                    <div class="fav-group">
+                        <div class="fav-group-header">
+                            <h3>${loc}</h3>
+                            <span class="fav-group-count">${props.length}</span>
+                        </div>
+                        ${props.map(p => renderFavCard(p)).join('')}
+                    </div>
+                `).join('');
+            } else {
+                // Render flat with location labels
+                groupsEl.innerHTML = favs.map(p => renderFavCard(p, true)).join('');
+            }
+        }
+
+        function renderFavCard(p, showLocation = false) {
+            const priceStr = p.lastSalePrice ? '$' + p.lastSalePrice.toLocaleString() : 'N/A';
+            const gisUrl = p.gisPortalUrl || '#';
+            const zoningColor = gisZoningColors[p.zoningCategory] || '#94a3b8';
+
+            return `
+                <div class="fav-card">
+                    <button class="gis-fav-star active" onclick="toggleFavorite(${JSON.stringify(p).replace(/'/g, '&#39;').replace(/"/g, '&quot;')});renderFavorites();" title="Remove from favorites">★</button>
+                    <div>
+                        <div class="fav-card-title">${p.parcel} — ${p.owner || 'Unknown'}</div>
+                        <div class="fav-card-info">
+                            <span><span class="fav-label">Acreage:</span> <span class="fav-value">${(p.acreage || 0).toLocaleString()} ac</span></span>
+                            <span><span class="fav-label">Zoning:</span> <span class="fav-value" style="background:${zoningColor};color:#fff;padding:1px 6px;border-radius:4px;font-size:0.75rem;">${p.zoningCode || 'N/A'}</span></span>
+                            <span><span class="fav-label">Sale Price:</span> <span class="fav-value" style="${p.lastSalePrice ? 'color:#16a34a;' : ''}">${priceStr}</span></span>
+                            ${showLocation ? `<span><span class="fav-label">Location:</span> <span class="fav-value">${p.searchLocation || p.county || ''}</span></span>` : ''}
+                            ${p.address && p.address !== 'N/A' ? `<span><span class="fav-label">Address:</span> <span class="fav-value">${p.address}</span></span>` : ''}
+                        </div>
+                    </div>
+                    <div class="fav-card-actions">
+                        <a href="${gisUrl}" target="_blank" rel="noopener" style="background:#2563eb;color:#fff;">GIS</a>
+                        <button onclick='showGisDetail(${JSON.stringify(p).replace(/'/g, "&#39;")})' style="background:rgba(245,158,11,0.15);color:#92400e;border:1px solid #f59e0b;">Details</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load favorites on page load
+        document.addEventListener('DOMContentLoaded', loadFavorites);
+
+        // Render favorites when switching to the tab
+        const origSwitchTab = typeof switchTab === 'function' ? null : null; // We'll hook into switchTab below
 
         // Store current location and raw scores
         let currentLocation = null;
@@ -6772,6 +7041,7 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabName + 'Tab').classList.add('active');
             if (tabName === 'map' && map) map.invalidateSize();
+            if (tabName === 'favorites') renderFavorites();
         }
 
         // ============ AUTOCOMPLETE & SEARCH ============
