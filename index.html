@@ -2681,6 +2681,111 @@
             text-decoration: none;
             cursor: pointer;
         }
+
+        /* Resort Favorite Cards */
+        .resort-fav-card {
+            background: linear-gradient(135deg, #fffbeb 0%, #fff 60%);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 14px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            transition: all 0.2s;
+        }
+        .resort-fav-card:hover {
+            border-color: rgba(245,158,11,0.6);
+            box-shadow: 0 4px 16px rgba(245,158,11,0.1);
+            transform: translateY(-1px);
+        }
+        .resort-fav-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .resort-fav-name { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+        .resort-fav-location { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+        .resort-fav-type-badge {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; background: rgba(245,158,11,0.15); color: #92400e;
+            padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+        }
+        .resort-metrics-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;
+        }
+        @media (max-width: 600px) { .resort-metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+        .resort-metric {
+            background: rgba(255,255,255,0.8); border: 1px solid rgba(245,158,11,0.15);
+            border-radius: 8px; padding: 10px 12px;
+        }
+        .resort-metric-label {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #94a3b8; margin-bottom: 4px;
+        }
+        .resort-metric-value { font-size: 1.0rem; font-weight: 700; color: #1e293b; }
+        .resort-metric-value.highlight { color: #16a34a; }
+        .resort-fav-card-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 12px; border-top: 1px solid rgba(245,158,11,0.15);
+        }
+        .resort-fav-remove {
+            background: none; border: 1px solid #e2e8f0; color: #94a3b8;
+            font-size: 0.8rem; padding: 4px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+        }
+        .resort-fav-remove:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+        .add-resort-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff; border: none; padding: 9px 18px; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all 0.2s; box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+        }
+        .add-resort-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,158,11,0.4); }
+
+        /* Add Resort Modal */
+        .resort-modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,0.55); z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        .resort-modal-overlay.show { display: flex; }
+        .resort-modal {
+            background: #fff; border-radius: 16px; padding: 32px;
+            width: 580px; max-width: 95vw; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .resort-modal h2 { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+        .resort-modal-sub { font-size: 0.85rem; color: #64748b; margin-bottom: 20px; }
+        .resort-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .resort-field { display: flex; flex-direction: column; gap: 5px; }
+        .resort-field.full-width { grid-column: 1 / -1; }
+        .resort-field label {
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #64748b;
+        }
+        .resort-field input, .resort-field select {
+            padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.9rem; font-family: inherit; color: #1e293b;
+            transition: border-color 0.2s; background: #fff;
+        }
+        .resort-field input:focus, .resort-field select:focus {
+            outline: none; border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+        }
+        .resort-autofill-notice {
+            font-size: 0.82rem; color: #16a34a; background: #f0fdf4;
+            border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px;
+            margin-bottom: 14px; display: none;
+        }
+        .resort-modal-divider {
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: #94a3b8; margin: 16px 0 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .resort-modal-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+        .resort-section-tag {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.72rem; color: #64748b; background: #f1f5f9;
+            padding: 2px 8px; border-radius: 4px; font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -3208,15 +3313,33 @@
         </div>
 
         <div id="favoritesTab" class="tab-content">
+            <!-- Resort Favorites -->
+            <div class="section-card" style="margin-top:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <h2 style="display:flex;align-items:center;gap:8px;margin:0;">
+                        <span style="color:#f59e0b;">★</span> Resort Comparables
+                    </h2>
+                    <button class="add-resort-btn" onclick="openAddResortModal()">+ Add Resort</button>
+                </div>
+                <p style="color:#64748b;margin-bottom:20px;margin-top:6px;">Manually saved resorts with full performance data. Use these as comps for Nehemiah underwriting.</p>
+                <div id="resortFavoritesEmpty" style="text-align:center;padding:30px 20px;color:#94a3b8;border:1px dashed rgba(245,158,11,0.3);border-radius:10px;">
+                    <div style="font-size:2.5rem;margin-bottom:10px;">🏔️</div>
+                    <div style="font-size:1rem;font-weight:500;">No resort comps saved yet</div>
+                    <div style="font-size:0.85rem;margin-top:6px;">Click "+ Add Resort" to save resorts like Aspen Meadows or Lodge at Blue Sky as comps.</div>
+                </div>
+                <div id="resortFavoritesGrid"></div>
+            </div>
+
+            <!-- GIS Property Favorites -->
             <div class="section-card" style="margin-top:20px;">
                 <h2 style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                    <span style="color:#f59e0b;">★</span> Favorite Properties
+                    <span style="color:#f59e0b;">★</span> Saved Parcels
                 </h2>
-                <p style="color:#64748b;margin-bottom:20px;">Properties you've starred across all locations. Click the star again to remove.</p>
+                <p style="color:#64748b;margin-bottom:20px;">Properties you've starred from GIS searches. Click the star again to remove.</p>
 
                 <div id="favoritesEmpty" style="text-align:center;padding:40px 20px;color:#94a3b8;">
                     <div style="font-size:3rem;margin-bottom:12px;">☆</div>
-                    <div style="font-size:1.1rem;font-weight:500;">No favorites yet</div>
+                    <div style="font-size:1.1rem;font-weight:500;">No parcels saved yet</div>
                     <div style="font-size:0.9rem;margin-top:8px;">Search for properties in the GIS Data tab and click the ★ star to save them here.</div>
                 </div>
 
@@ -3231,6 +3354,89 @@
                         </select>
                     </div>
                     <div id="favoritesGroups"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Resort Modal -->
+        <div class="resort-modal-overlay" id="resortModalOverlay" onclick="if(event.target===this)closeResortModal()">
+            <div class="resort-modal">
+                <h2>Add Resort Comp</h2>
+                <p class="resort-modal-sub">Type a resort name to auto-fill from the database, or enter data manually.</p>
+                <div id="resortAutofillNotice" class="resort-autofill-notice">✓ Auto-filled from resort database — review and adjust as needed.</div>
+                <div class="resort-field-row">
+                    <div class="resort-field full-width">
+                        <label>Resort Name *</label>
+                        <input type="text" id="rfName" placeholder="e.g. Aspen Meadows Resort" oninput="resortLookup(this.value)" autocomplete="off">
+                        <div id="resortSuggestBox" style="display:none;position:absolute;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:3000;max-height:200px;overflow-y:auto;width:calc(580px - 64px);max-width:80vw;"></div>
+                    </div>
+                </div>
+                <div class="resort-field-row">
+                    <div class="resort-field">
+                        <label>City</label>
+                        <input type="text" id="rfCity" placeholder="e.g. Aspen">
+                    </div>
+                    <div class="resort-field">
+                        <label>State</label>
+                        <input type="text" id="rfState" placeholder="e.g. CO" maxlength="2">
+                    </div>
+                </div>
+
+                <div class="resort-modal-divider">Performance Data</div>
+                <div class="resort-field-row">
+                    <div class="resort-field">
+                        <label>Rooms</label>
+                        <input type="number" id="rfRooms" placeholder="e.g. 98" min="1">
+                    </div>
+                    <div class="resort-field">
+                        <label>Acres</label>
+                        <input type="number" id="rfAcres" placeholder="e.g. 40" min="0" step="0.1">
+                    </div>
+                </div>
+                <div class="resort-field-row">
+                    <div class="resort-field">
+                        <label>ADR ($/night)</label>
+                        <input type="number" id="rfAdr" placeholder="e.g. 695" min="0">
+                    </div>
+                    <div class="resort-field">
+                        <label>Occupancy (%)</label>
+                        <input type="number" id="rfOccupancy" placeholder="e.g. 68" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="resort-modal-divider">Events & Revenue</div>
+                <div class="resort-field-row">
+                    <div class="resort-field">
+                        <label>Weddings / Year</label>
+                        <input type="number" id="rfWeddings" placeholder="e.g. 55" min="0">
+                    </div>
+                    <div class="resort-field">
+                        <label>Corp Events / Year</label>
+                        <input type="number" id="rfEvents" placeholder="e.g. 135" min="0">
+                    </div>
+                </div>
+
+                <div class="resort-modal-divider">Amenities</div>
+                <div class="resort-field-row">
+                    <div class="resort-field">
+                        <label>Has Spa?</label>
+                        <select id="rfSpa">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                    <div class="resort-field">
+                        <label>Has Restaurant?</label>
+                        <select id="rfRestaurant">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
+                    <button onclick="closeResortModal()" style="padding:10px 20px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#64748b;font-size:0.9rem;cursor:pointer;font-family:inherit;">Cancel</button>
+                    <button onclick="saveResortFavorite()" style="padding:10px 24px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(245,158,11,0.3);">Save Resort</button>
                 </div>
             </div>
         </div>
@@ -4600,7 +4806,7 @@
         }
 
         function updateFavBadge() {
-            const count = Object.keys(favoritesData).length;
+            const count = Object.keys(favoritesData).length + Object.keys(resortFavoritesData || {}).length;
             const badge = document.getElementById('favCountBadge');
             if (badge) {
                 badge.textContent = count;
@@ -4693,8 +4899,208 @@
             `;
         }
 
+        // ============ RESORT FAVORITES ============
+        let resortFavoritesData = {}; // { key: { name, city, state, rooms, adr, occupancy, ... } }
+
+        function loadResortFavorites() {
+            try {
+                const stored = localStorage.getItem('nehemiah-resort-favorites');
+                resortFavoritesData = stored ? JSON.parse(stored) : {};
+            } catch(e) { resortFavoritesData = {}; }
+            renderResortFavorites();
+        }
+
+        function saveResortFavoritesToStorage() {
+            localStorage.setItem('nehemiah-resort-favorites', JSON.stringify(resortFavoritesData));
+            updateFavBadge();
+        }
+
+        function openAddResortModal() {
+            // Clear form
+            ['rfName','rfCity','rfState','rfRooms','rfAcres','rfAdr','rfOccupancy','rfWeddings','rfEvents'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('rfSpa').value = 'false';
+            document.getElementById('rfRestaurant').value = 'true';
+            document.getElementById('resortAutofillNotice').style.display = 'none';
+            document.getElementById('resortSuggestBox').style.display = 'none';
+            document.getElementById('resortModalOverlay').classList.add('show');
+            setTimeout(() => document.getElementById('rfName').focus(), 100);
+        }
+
+        function closeResortModal() {
+            document.getElementById('resortModalOverlay').classList.remove('show');
+            document.getElementById('resortSuggestBox').style.display = 'none';
+        }
+
+        function resortLookup(val) {
+            const box = document.getElementById('resortSuggestBox');
+            if (!val || val.length < 2) { box.style.display = 'none'; return; }
+            const q = val.toLowerCase();
+            const matches = resortDatabase.filter(r =>
+                r.name.toLowerCase().includes(q) ||
+                r.city.toLowerCase().includes(q)
+            ).slice(0, 8);
+
+            if (matches.length === 0) { box.style.display = 'none'; return; }
+
+            box.innerHTML = matches.map(r => `
+                <div onclick="autofillResort(${JSON.stringify(r).replace(/"/g,'&quot;')})"
+                     style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:0.88rem;transition:background 0.15s;"
+                     onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='#fff'">
+                    <div style="font-weight:600;color:#1e293b;">${r.name}</div>
+                    <div style="font-size:0.78rem;color:#64748b;">${r.city}, ${r.state} · ${r.rooms} rooms · ADR $${r.adr.toLocaleString()}</div>
+                </div>
+            `).join('');
+            box.style.display = 'block';
+        }
+
+        function autofillResort(r) {
+            document.getElementById('rfName').value = r.name;
+            document.getElementById('rfCity').value = r.city;
+            document.getElementById('rfState').value = r.state;
+            document.getElementById('rfRooms').value = r.rooms;
+            document.getElementById('rfAcres').value = r.acres;
+            document.getElementById('rfAdr').value = r.adr;
+            document.getElementById('rfOccupancy').value = r.occupancy;
+            document.getElementById('rfWeddings').value = r.weddingsPerYear;
+            document.getElementById('rfEvents').value = r.eventsPerYear;
+            document.getElementById('rfSpa').value = r.hasSpa ? 'true' : 'false';
+            document.getElementById('rfRestaurant').value = r.hasRestaurant ? 'true' : 'false';
+            document.getElementById('resortAutofillNotice').style.display = 'block';
+            document.getElementById('resortSuggestBox').style.display = 'none';
+        }
+
+        function saveResortFavorite() {
+            const name = document.getElementById('rfName').value.trim();
+            if (!name) { alert('Please enter a resort name.'); return; }
+
+            const rooms = parseInt(document.getElementById('rfRooms').value) || 0;
+            const adr = parseFloat(document.getElementById('rfAdr').value) || 0;
+            const occupancy = parseFloat(document.getElementById('rfOccupancy').value) || 0;
+            const revpar = Math.round(adr * (occupancy / 100));
+            const estRoomRevenue = Math.round(rooms * (occupancy / 100) * 365 * adr);
+            const estTotalRevenue = Math.round(estRoomRevenue * 1.5); // 1.5x multiplier for F&B/events/spa
+
+            const key = 'resort_' + name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + Date.now();
+            resortFavoritesData[key] = {
+                key,
+                name,
+                city: document.getElementById('rfCity').value.trim(),
+                state: document.getElementById('rfState').value.trim().toUpperCase(),
+                rooms,
+                acres: parseFloat(document.getElementById('rfAcres').value) || 0,
+                adr,
+                occupancy,
+                revpar,
+                weddingsPerYear: parseInt(document.getElementById('rfWeddings').value) || 0,
+                eventsPerYear: parseInt(document.getElementById('rfEvents').value) || 0,
+                hasSpa: document.getElementById('rfSpa').value === 'true',
+                hasRestaurant: document.getElementById('rfRestaurant').value === 'true',
+                estRoomRevenue,
+                estTotalRevenue,
+                addedAt: new Date().toISOString()
+            };
+
+            saveResortFavoritesToStorage();
+            renderResortFavorites();
+            closeResortModal();
+        }
+
+        function removeResortFavorite(key) {
+            if (!confirm('Remove this resort from your comps?')) return;
+            delete resortFavoritesData[key];
+            saveResortFavoritesToStorage();
+            renderResortFavorites();
+        }
+
+        function renderResortFavorites() {
+            const resorts = Object.values(resortFavoritesData);
+            const emptyEl = document.getElementById('resortFavoritesEmpty');
+            const gridEl = document.getElementById('resortFavoritesGrid');
+            if (!emptyEl || !gridEl) return;
+
+            if (resorts.length === 0) {
+                emptyEl.style.display = 'block';
+                gridEl.innerHTML = '';
+                return;
+            }
+            emptyEl.style.display = 'none';
+
+            resorts.sort((a, b) => new Date(b.addedAt||0) - new Date(a.addedAt||0));
+
+            gridEl.innerHTML = resorts.map(r => {
+                const revStr = r.estTotalRevenue ? '$' + (r.estTotalRevenue/1000000).toFixed(1) + 'M' : 'N/A';
+                const roomRevStr = r.estRoomRevenue ? '$' + (r.estRoomRevenue/1000000).toFixed(1) + 'M' : 'N/A';
+                const addedDate = r.addedAt ? new Date(r.addedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+                const amenities = [r.hasSpa && '🧖 Spa', r.hasRestaurant && '🍽 Restaurant'].filter(Boolean).join(' · ') || 'No amenities listed';
+                return `
+                <div class="resort-fav-card">
+                    <div class="resort-fav-card-header">
+                        <div>
+                            <div class="resort-fav-name">${r.name}</div>
+                            <div class="resort-fav-location">${[r.city, r.state].filter(Boolean).join(', ')}${r.acres ? ' · ' + r.acres.toLocaleString() + ' acres' : ''}</div>
+                        </div>
+                        <span class="resort-fav-type-badge">Resort Comp</span>
+                    </div>
+                    <div class="resort-metrics-grid">
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">ADR</div>
+                            <div class="resort-metric-value">$${r.adr ? r.adr.toLocaleString() : '—'}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">Occupancy</div>
+                            <div class="resort-metric-value">${r.occupancy ? r.occupancy + '%' : '—'}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">RevPAR</div>
+                            <div class="resort-metric-value">$${r.revpar ? r.revpar.toLocaleString() : '—'}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">Rooms</div>
+                            <div class="resort-metric-value">${r.rooms ? r.rooms.toLocaleString() : '—'}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">Weddings/Yr</div>
+                            <div class="resort-metric-value">${r.weddingsPerYear != null ? r.weddingsPerYear : '—'}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">Corp Events/Yr</div>
+                            <div class="resort-metric-value">${r.eventsPerYear != null ? r.eventsPerYear : '—'}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">Est. Room Rev.</div>
+                            <div class="resort-metric-value highlight">${roomRevStr}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">Est. Total Rev.</div>
+                            <div class="resort-metric-value highlight">${revStr}</div>
+                        </div>
+                        <div class="resort-metric">
+                            <div class="resort-metric-label">Amenities</div>
+                            <div class="resort-metric-value" style="font-size:0.78rem;font-weight:500;color:#64748b;">${amenities}</div>
+                        </div>
+                    </div>
+                    <div class="resort-fav-card-footer">
+                        <span style="font-size:0.75rem;color:#94a3b8;">Added ${addedDate}</span>
+                        <button class="resort-fav-remove" onclick="removeResortFavorite('${r.key}')">Remove</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Close suggest box when clicking outside
+        document.addEventListener('click', function(e) {
+            const box = document.getElementById('resortSuggestBox');
+            if (box && !box.contains(e.target) && e.target.id !== 'rfName') {
+                box.style.display = 'none';
+            }
+        });
+
         // Load favorites on page load
         document.addEventListener('DOMContentLoaded', loadFavorites);
+        document.addEventListener('DOMContentLoaded', loadResortFavorites);
 
         // Render favorites when switching to the tab
         const origSwitchTab = typeof switchTab === 'function' ? null : null; // We'll hook into switchTab below
@@ -7050,7 +7456,7 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabName + 'Tab').classList.add('active');
             if (tabName === 'map' && map) map.invalidateSize();
-            if (tabName === 'favorites') renderFavorites();
+            if (tabName === 'favorites') { renderFavorites(); renderResortFavorites(); }
         }
 
         // ============ AUTOCOMPLETE & SEARCH ============
