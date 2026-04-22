@@ -4984,17 +4984,75 @@
         // ============ RESORT FAVORITES ============
         let resortFavoritesData = {}; // { key: { name, city, state, rooms, adr, occupancy, ... } }
 
-        function loadResortFavorites() {
+        async function loadResortFavorites() {
+            // Read whatever is in localStorage first (this is what the user was seeing before)
+            let localFavs = {};
             try {
                 const stored = localStorage.getItem('nehemiah-resort-favorites');
-                resortFavoritesData = stored ? JSON.parse(stored) : {};
-            } catch(e) { resortFavoritesData = {}; }
+                localFavs = stored ? JSON.parse(stored) : {};
+            } catch(e) { localFavs = {}; }
+
+            // Try server so favorites sync across devices
+            let serverFavs = null;
+            try {
+                const res = await fetch('/api/resort-favorites');
+                if (res.ok) {
+                    const data = await res.json();
+                    serverFavs = data.favorites || {};
+                }
+            } catch (e) {
+                console.warn('Could not load resort favorites from server:', e);
+            }
+
+            if (serverFavs === null) {
+                // Server unreachable — use local only
+                resortFavoritesData = localFavs;
+            } else if (Object.keys(serverFavs).length === 0 && Object.keys(localFavs).length > 0) {
+                // First-time sync: server is empty but this device has favorites.
+                // Push them up so other devices can see them.
+                resortFavoritesData = localFavs;
+                try {
+                    await fetch('/api/resort-favorites', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ favorites: localFavs })
+                    });
+                } catch (e) { console.warn('Initial upload of resort favorites failed:', e); }
+            } else {
+                // Merge: server wins for duplicates, but keep any local-only items and push the merge up
+                const merged = { ...localFavs, ...serverFavs };
+                resortFavoritesData = merged;
+                localStorage.setItem('nehemiah-resort-favorites', JSON.stringify(merged));
+                const localOnlyKeys = Object.keys(localFavs).filter(k => !(k in serverFavs));
+                if (localOnlyKeys.length > 0) {
+                    try {
+                        await fetch('/api/resort-favorites', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ favorites: merged })
+                        });
+                    } catch (e) { console.warn('Merge upload failed:', e); }
+                }
+            }
+
             renderResortFavorites();
+            updateFavBadge();
         }
 
-        function saveResortFavoritesToStorage() {
+        async function saveResortFavoritesToStorage() {
+            // Always write to localStorage immediately (offline cache + instant UI)
             localStorage.setItem('nehemiah-resort-favorites', JSON.stringify(resortFavoritesData));
             updateFavBadge();
+            // Then persist to server so other devices see it
+            try {
+                await fetch('/api/resort-favorites', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ favorites: resortFavoritesData })
+                });
+            } catch (e) {
+                console.warn('Could not save resort favorites to server:', e);
+            }
         }
 
         function openAddResortModal() {
