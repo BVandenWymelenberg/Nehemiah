@@ -8067,10 +8067,61 @@
 
             // Pick template: server wins, then local, then hardcoded defaults
             analyzerTemplate = serverTemplate || localTemplate || null;
-            if (analyzerTemplate) {
+
+            // Migrate old templates that predate Top 30 / 1–5 existing resorts / weights
+            const migrated = migrateAnalyzerTemplate(analyzerTemplate);
+            if (migrated !== analyzerTemplate) {
+                analyzerTemplate = migrated;
+                if (analyzerTemplate) {
+                    localStorage.setItem('nehemiah-analyzer-template', JSON.stringify(analyzerTemplate));
+                }
+                // Push the migrated template to blob so other devices pick it up too
+                try {
+                    await fetch('/api/ranked-properties', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ranked: rankedProperties, template: analyzerTemplate })
+                    });
+                } catch (e) { console.warn('Template migration upload failed:', e); }
+            } else if (analyzerTemplate) {
                 localStorage.setItem('nehemiah-analyzer-template', JSON.stringify(analyzerTemplate));
             }
             renderRankedProperties();
+        }
+
+        function migrateAnalyzerTemplate(tpl) {
+            if (!Array.isArray(tpl) || tpl.length === 0) return tpl;
+            let changed = false;
+            let working = tpl.map(c => ({ ...c }));
+
+            // Rename: top_50_resort → top_30_resort (weight 3)
+            const oldTop50Idx = working.findIndex(c => c.id === 'top_50_resort');
+            const hasTop30 = working.some(c => c.id === 'top_30_resort');
+            if (oldTop50Idx >= 0 && !hasTop30) {
+                working[oldTop50Idx].id = 'top_30_resort';
+                working[oldTop50Idx].label = 'Top 30 resort community';
+                working[oldTop50Idx].weight = 3;
+                changed = true;
+            }
+
+            // Backfill missing weights using defaults; unknown ids default to 1x
+            const defaultMap = Object.fromEntries(DEFAULT_ANALYZER_CRITERIA.map(c => [c.id, c]));
+            for (const c of working) {
+                if (c.weight === undefined || c.weight === null) {
+                    c.weight = (defaultMap[c.id] && defaultMap[c.id].weight) || 1;
+                    changed = true;
+                }
+            }
+
+            // Add any default criteria that the template is missing (e.g. existing_resorts_700_adr)
+            for (const def of DEFAULT_ANALYZER_CRITERIA) {
+                if (!working.some(c => c.id === def.id)) {
+                    working.push({ ...def });
+                    changed = true;
+                }
+            }
+
+            return changed ? working : tpl;
         }
 
         function getStartingCriteria() {
