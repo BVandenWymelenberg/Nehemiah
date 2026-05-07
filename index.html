@@ -1605,17 +1605,29 @@
         .analyzer-btn.danger { background: #fee2e2; color: #991b1b; }
         .analyzer-btn.danger:hover { background: #fecaca; }
 
-        .criteria-list { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
-        .criteria-row { display: grid; grid-template-columns: 1fr 220px 70px 40px; gap: 12px; align-items: center; padding: 12px 14px; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 10px; }
-        .criteria-row .crit-label { font-size: 0.92rem; color: #1e293b; font-weight: 500; padding: 4px 6px; border-radius: 6px; cursor: text; outline: none; min-height: 1em; }
-        .criteria-row .crit-label:hover { background: #fff7ed; }
-        .criteria-row .crit-label:focus { background: #fff; box-shadow: 0 0 0 2px rgba(245,158,11,0.4); }
+        .criteria-toolbar { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; gap: 12px; flex-wrap: wrap; }
+        .criteria-toolbar-label { font-size: 0.8rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+        .sort-bubbles { display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 4px; gap: 2px; }
+        .sort-bubble { background: transparent; border: none; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; color: #64748b; border-radius: 999px; cursor: pointer; transition: all 0.15s ease; }
+        .sort-bubble:hover { color: #b8860b; }
+        .sort-bubble.active { background: linear-gradient(135deg,#fcd34d,#f59e0b); color: #78350f; box-shadow: 0 1px 4px rgba(245,158,11,0.35); }
+        .criteria-list { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .criteria-row { display: grid; grid-template-columns: 44px minmax(0, 1.6fr) 28px minmax(120px, 180px) 60px 28px; gap: 10px; align-items: center; padding: 12px 14px; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 10px; }
+        .criteria-row .crit-weight { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 26px; padding: 0 8px; font-size: 0.78rem; font-weight: 700; border-radius: 999px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .criteria-row .crit-weight.w-2x { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+        .criteria-row .crit-weight.w-3x { background: linear-gradient(135deg,#fcd34d,#f59e0b); color: #78350f; border-color: #d97706; }
+        .criteria-row .crit-label { font-size: 0.92rem; color: #1e293b; font-weight: 500; padding: 4px 6px; border-radius: 6px; outline: none; min-height: 1em; cursor: default; }
+        .criteria-row .crit-label.editing { background: #fff; box-shadow: 0 0 0 2px rgba(245,158,11,0.4); cursor: text; }
+        .criteria-row .crit-edit { background: transparent; color: #94a3b8; border: none; cursor: pointer; font-size: 1rem; padding: 2px 4px; border-radius: 4px; }
+        .criteria-row .crit-edit:hover { color: #b8860b; background: #fff7ed; }
         .criteria-row input[type=range] { width: 100%; accent-color: #f59e0b; }
         .criteria-row .crit-score { font-weight: 700; color: #b8860b; text-align: center; font-size: 1rem; }
         .criteria-row .crit-remove { background: transparent; color: #94a3b8; border: none; cursor: pointer; font-size: 1.1rem; }
         .criteria-row .crit-remove:hover { color: #ef4444; }
-        .criteria-add-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+        .criteria-add-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
         .criteria-add-row input { flex: 1; min-width: 240px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+        .analyzer-weight-select { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; background: #fff; cursor: pointer; min-width: 120px; }
+        .analyzer-weight-select:focus { outline: none; border-color: #f59e0b; }
 
         .analyzer-score-badge { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #f59e0b; border-radius: 12px; font-weight: 700; color: #78350f; font-size: 1.4rem; }
         .analyzer-score-badge .score-num { font-size: 1.8rem; }
@@ -3130,10 +3142,24 @@
                         <input type="text" id="analyzerPropName" placeholder="Property description (e.g. Dao House - Estes Park)">
                     </div>
 
+                    <div class="criteria-toolbar">
+                        <span class="criteria-toolbar-label">Criteria · sort by</span>
+                        <div class="sort-bubbles" id="analyzerSortBubbles">
+                            <button class="sort-bubble active" data-sort="weight" onclick="setAnalyzerSort('weight')" title="Highest weight first (3x → 1x)">Weight</button>
+                            <button class="sort-bubble" data-sort="score" onclick="setAnalyzerSort('score')" title="Highest score first">Score</button>
+                            <button class="sort-bubble" data-sort="custom" onclick="setAnalyzerSort('custom')" title="Original order">Order</button>
+                        </div>
+                    </div>
+
                     <div class="criteria-list" id="analyzerCriteriaList"></div>
 
                     <div class="criteria-add-row">
                         <input type="text" id="analyzerNewCriterion" placeholder="Add custom criterion (e.g. Walkable downtown)" onkeydown="if(event.key==='Enter'){event.preventDefault();addAnalyzerCriterion();}">
+                        <select id="analyzerNewCriterionWeight" class="analyzer-weight-select" title="Weight">
+                            <option value="1">1x weight</option>
+                            <option value="2">2x weight</option>
+                            <option value="3">3x weight</option>
+                        </select>
                         <button class="analyzer-btn secondary" onclick="addAnalyzerCriterion()">+ Add Criterion</button>
                     </div>
                 </div>
@@ -7941,24 +7967,53 @@
 
         // ============ PROPERTY ANALYZER ============
         const DEFAULT_ANALYZER_CRITERIA = [
-            { id: 'land_build_under_35m', label: 'Total land purchase + build under $35M' },
-            { id: 'instagrammable_units_70', label: 'Instagrammable views — 70% of units' },
-            { id: 'instagrammable_venue', label: 'Instagrammable venue views' },
-            { id: 'units_up_to_40', label: 'Ability to build up to 40 units' },
-            { id: 'airport_2_5h', label: '2.5 hours to major airport' },
-            { id: 'metro_2h', label: '2 hours to major metro (size)' },
-            { id: 'top_50_resort', label: 'Top 50 resort community' },
-            { id: 'town_20min', label: '20 mins to town with restaurants / tourist / resort area' },
-            { id: 'biking_tourist_few_miles', label: 'Within a few miles of biking / tourist area' },
-            { id: 'noise_scale', label: 'Noise scale (10 = quiet)' }
+            { id: 'land_build_under_35m', label: 'Total land purchase + build under $35M', weight: 1 },
+            { id: 'instagrammable_units_70', label: 'Instagrammable views — 70% of units', weight: 1 },
+            { id: 'instagrammable_venue', label: 'Instagrammable venue views', weight: 1 },
+            { id: 'units_up_to_40', label: 'Ability to build up to 40 units', weight: 1 },
+            { id: 'airport_2_5h', label: '2.5 hours to major airport', weight: 1 },
+            { id: 'metro_2h', label: '2 hours to major metro (size)', weight: 1 },
+            { id: 'top_30_resort', label: 'Top 30 resort community', weight: 3 },
+            { id: 'existing_resorts_700_adr', label: '1–5 existing resorts over $700 ADR', weight: 3 },
+            { id: 'town_20min', label: '20 mins to town with restaurants / tourist / resort area', weight: 1 },
+            { id: 'biking_tourist_few_miles', label: 'Within a few miles of biking / tourist area', weight: 1 },
+            { id: 'noise_scale', label: 'Noise scale (10 = quiet)', weight: 1 }
         ];
+
+        const ALLOWED_WEIGHTS = [1, 2, 3];
+        function normalizeWeight(w) {
+            const n = Number(w);
+            return ALLOWED_WEIGHTS.includes(n) ? n : 1;
+        }
 
         // In-memory state
         let rankedProperties = {}; // { id: { id, name, scores: { critId: 0-10 }, criteria: [{id,label}], createdAt, updatedAt } }
-        let analyzerCriteria = []; // current working criteria for the input form
+        let analyzerCriteria = []; // current working criteria for the input form (canonical order)
         let analyzerScores = {};   // current working scores keyed by criterion id
         let analyzerEditingId = null; // null = creating new; else key in rankedProperties
         let analyzerTemplate = null; // user-customized default criteria (persists)
+        let analyzerSort = (function() { try { return localStorage.getItem('nehemiah-analyzer-sort') || 'weight'; } catch (e) { return 'weight'; } })();
+
+        function setAnalyzerSort(mode) {
+            if (!['weight', 'score', 'custom'].includes(mode)) return;
+            analyzerSort = mode;
+            try { localStorage.setItem('nehemiah-analyzer-sort', mode); } catch (e) {}
+            document.querySelectorAll('#analyzerSortBubbles .sort-bubble').forEach(b => {
+                b.classList.toggle('active', b.dataset.sort === mode);
+            });
+            renderAnalyzerCriteria();
+        }
+
+        function getSortedAnalyzerCriteria() {
+            // Preserve canonical order; return shallow-copied indexed entries with stable tiebreak.
+            const indexed = analyzerCriteria.map((c, i) => ({ c, i }));
+            if (analyzerSort === 'weight') {
+                indexed.sort((a, b) => normalizeWeight(b.c.weight) - normalizeWeight(a.c.weight) || a.i - b.i);
+            } else if (analyzerSort === 'score') {
+                indexed.sort((a, b) => (Number(analyzerScores[b.c.id]) || 0) - (Number(analyzerScores[a.c.id]) || 0) || a.i - b.i);
+            } // custom = canonical order, no sort
+            return indexed.map(x => x.c);
+        }
 
         async function loadRankedProperties() {
             let local = {};
@@ -8022,7 +8077,7 @@
             const src = (analyzerTemplate && Array.isArray(analyzerTemplate) && analyzerTemplate.length)
                 ? analyzerTemplate
                 : DEFAULT_ANALYZER_CRITERIA;
-            return src.map(c => ({ ...c }));
+            return src.map(c => ({ ...c, weight: normalizeWeight(c.weight) }));
         }
 
         async function saveRankedPropertiesToStorage() {
@@ -8044,24 +8099,31 @@
         function computeAnalyzerPercent() {
             if (!analyzerCriteria.length) return 0;
             let total = 0;
+            let max = 0;
             for (const c of analyzerCriteria) {
-                const v = Number(analyzerScores[c.id]) || 0;
-                total += Math.max(0, Math.min(10, v));
+                const w = normalizeWeight(c.weight);
+                const v = Math.max(0, Math.min(10, Number(analyzerScores[c.id]) || 0));
+                total += v * w;
+                max += 10 * w;
             }
-            const max = analyzerCriteria.length * 10;
+            if (max === 0) return 0;
             return Math.round((total / max) * 100);
         }
 
         function renderAnalyzerCriteria() {
             const list = document.getElementById('analyzerCriteriaList');
             if (!list) return;
-            list.innerHTML = analyzerCriteria.map(c => {
+            const view = getSortedAnalyzerCriteria();
+            list.innerHTML = view.map(c => {
                 const v = Number(analyzerScores[c.id]) || 0;
+                const w = normalizeWeight(c.weight);
                 return `
                     <div class="criteria-row" data-cid="${c.id}">
-                        <div class="crit-label" contenteditable="true" spellcheck="false" title="Click to edit"
-                             onblur="updateAnalyzerLabel('${c.id}', this.innerText)"
-                             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${escapeHtml(c.label)}</div>
+                        <div class="crit-weight w-${w}x" title="Weight">${w}x</div>
+                        <div class="crit-label" id="critLabel-${c.id}" spellcheck="false"
+                             onblur="finishAnalyzerLabelEdit('${c.id}', this)"
+                             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();} else if(event.key==='Escape'){this.innerText=this.dataset.original||'';this.blur();}">${escapeHtml(c.label)}</div>
+                        <button class="crit-edit" id="critEdit-${c.id}" title="Edit label" onclick="startAnalyzerLabelEdit('${c.id}')">✎</button>
                         <input type="range" min="0" max="10" step="1" value="${v}" oninput="updateAnalyzerScore('${c.id}', this.value)">
                         <div class="crit-score" id="critScore-${c.id}">${v} / 10</div>
                         <button class="crit-remove" title="Remove criterion" onclick="removeAnalyzerCriterion('${c.id}')">×</button>
@@ -8071,32 +8133,53 @@
             updateAnalyzerLiveScore();
         }
 
-        function updateAnalyzerLabel(cid, newLabelRaw) {
-            const newLabel = (newLabelRaw || '').trim();
+        function startAnalyzerLabelEdit(cid) {
+            const labelEl = document.getElementById('critLabel-' + cid);
+            if (!labelEl) return;
+            labelEl.dataset.original = labelEl.innerText;
+            labelEl.contentEditable = 'true';
+            labelEl.classList.add('editing');
+            labelEl.focus();
+            // Place caret at end
+            const range = document.createRange();
+            range.selectNodeContents(labelEl);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+
+        function finishAnalyzerLabelEdit(cid, el) {
+            if (!el || el.contentEditable !== 'true') return;
+            el.contentEditable = 'false';
+            el.classList.remove('editing');
+            const newLabel = (el.innerText || '').trim();
             const c = analyzerCriteria.find(x => x.id === cid);
             if (!c) return;
             if (!newLabel) {
-                // Empty label not allowed — restore previous label visually
-                renderAnalyzerCriteria();
+                el.innerText = c.label; // restore
                 return;
             }
             if (c.label === newLabel) return;
             c.label = newLabel;
-            // If creating a new property (no editingId), edits update the persisted template
-            // so future new properties start with the updated label.
             if (analyzerEditingId === null) {
-                analyzerTemplate = analyzerCriteria.map(x => ({ id: x.id, label: x.label }));
+                analyzerTemplate = analyzerCriteria.map(x => ({ id: x.id, label: x.label, weight: normalizeWeight(x.weight) }));
                 localStorage.setItem('nehemiah-analyzer-template', JSON.stringify(analyzerTemplate));
-                // Persist template to server in the background (no need to await)
                 saveRankedPropertiesToStorage();
             }
         }
 
+        let _analyzerSortRerenderTimer = null;
         function updateAnalyzerScore(cid, val) {
             analyzerScores[cid] = Number(val);
             const cell = document.getElementById('critScore-' + cid);
             if (cell) cell.textContent = `${val} / 10`;
             updateAnalyzerLiveScore();
+            // If sorting by score, debounce a re-render so rows don't jump while dragging.
+            if (analyzerSort === 'score') {
+                clearTimeout(_analyzerSortRerenderTimer);
+                _analyzerSortRerenderTimer = setTimeout(renderAnalyzerCriteria, 350);
+            }
         }
 
         function updateAnalyzerLiveScore() {
@@ -8114,19 +8197,22 @@
 
         function persistTemplateIfNewMode() {
             if (analyzerEditingId !== null) return;
-            analyzerTemplate = analyzerCriteria.map(x => ({ id: x.id, label: x.label }));
+            analyzerTemplate = analyzerCriteria.map(x => ({ id: x.id, label: x.label, weight: normalizeWeight(x.weight) }));
             localStorage.setItem('nehemiah-analyzer-template', JSON.stringify(analyzerTemplate));
             saveRankedPropertiesToStorage();
         }
 
         function addAnalyzerCriterion() {
             const inp = document.getElementById('analyzerNewCriterion');
+            const wSel = document.getElementById('analyzerNewCriterionWeight');
             const label = (inp.value || '').trim();
             if (!label) return;
+            const weight = normalizeWeight(wSel ? wSel.value : 1);
             const id = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-            analyzerCriteria.push({ id, label });
+            analyzerCriteria.push({ id, label, weight });
             analyzerScores[id] = 0;
             inp.value = '';
+            if (wSel) wSel.value = '1';
             renderAnalyzerCriteria();
             persistTemplateIfNewMode();
         }
@@ -8181,7 +8267,7 @@
             rankedProperties[id] = {
                 id,
                 name,
-                criteria: analyzerCriteria.map(c => ({ ...c })),
+                criteria: analyzerCriteria.map(c => ({ ...c, weight: normalizeWeight(c.weight) })),
                 scores: { ...analyzerScores },
                 percent: computeAnalyzerPercent(),
                 createdAt: existing.createdAt || now,
@@ -8203,7 +8289,7 @@
             analyzerEditingId = id;
             document.getElementById('analyzerPropName').value = p.name;
             document.getElementById('analyzerCardTitle').textContent = 'Editing: ' + p.name;
-            analyzerCriteria = (p.criteria || []).map(c => ({ ...c }));
+            analyzerCriteria = (p.criteria || []).map(c => ({ ...c, weight: normalizeWeight(c.weight) }));
             analyzerScores = { ...(p.scores || {}) };
             // Make sure each criterion has a score key
             analyzerCriteria.forEach(c => {
@@ -8262,6 +8348,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
+            // Sync the sort bubble active state with persisted preference
+            document.querySelectorAll('#analyzerSortBubbles .sort-bubble').forEach(b => {
+                b.classList.toggle('active', b.dataset.sort === analyzerSort);
+            });
             // Show defaults immediately, then refresh from saved template once loaded
             analyzerCriteria = DEFAULT_ANALYZER_CRITERIA.map(c => ({ ...c }));
             analyzerScores = {};
