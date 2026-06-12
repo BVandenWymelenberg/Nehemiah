@@ -2900,6 +2900,7 @@
                         <tr>
                             <th class="rank-col">Rank</th>
                             <th class="market-col">Market</th>
+                            <th class="agent-col">Agent</th>
                             <th class="score-col">Score</th>
                             <th class="tier-col">Tier</th>
                         </tr>
@@ -3133,6 +3134,7 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
                         <h3 id="analyzerCardTitle" style="margin:0;font-size:1.05rem;color:#0f172a;">New Property</h3>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="analyzer-btn secondary" onclick="exportAllData()" title="Download a JSON backup of all agents, properties, notes &amp; file list">⬇ Export All</button>
                             <button class="analyzer-btn secondary" onclick="resetAnalyzerForm()">Clear</button>
                             <button class="analyzer-btn secondary" id="analyzerResetCriteriaBtn" onclick="resetAnalyzerCriteriaToDefault()">Reset Criteria</button>
                             <button class="analyzer-btn" onclick="saveAnalyzedProperty()">💾 Save Property</button>
@@ -3142,6 +3144,25 @@
                         <input type="text" id="analyzerPropName" placeholder="Property description (e.g. Dao House - Estes Park)">
                     </div>
 
+                    <div class="analyzer-details-grid">
+                        <div><label>Town / market</label><input type="text" id="analyzerPropTown" list="analyzerTownList" placeholder="Start typing…"></div>
+                        <div><label>Deal stage</label><select id="analyzerPropStatus">
+                            <option value="">— none —</option>
+                            <option>Watching</option><option>Researching</option><option>Visited</option>
+                            <option>Offer</option><option>Under Contract</option><option>Owned</option><option>Passed</option>
+                        </select></div>
+                        <div><label>Asking price</label><input type="text" id="analyzerPropPrice" placeholder="$"></div>
+                        <div><label>Acreage</label><input type="text" id="analyzerPropAcreage" placeholder="acres"></div>
+                        <div><label>Rooms / keys</label><input type="text" id="analyzerPropRooms" placeholder="#"></div>
+                        <div><label>Listing URL</label><input type="text" id="analyzerPropUrl" placeholder="https://"></div>
+                    </div>
+
+                    <div class="analyzer-subtabs">
+                        <button type="button" class="analyzer-subtab active" data-panel="score" onclick="switchAnalyzerPanel('score')">📊 Scoring</button>
+                        <button type="button" class="analyzer-subtab" data-panel="notes" onclick="switchAnalyzerPanel('notes')">📁 Notes &amp; Files <span id="analyzerNotesCount"></span></button>
+                    </div>
+
+                    <div id="analyzerScorePanel">
                     <div class="criteria-toolbar">
                         <span class="criteria-toolbar-label">Criteria · sort by</span>
                         <div class="sort-bubbles" id="analyzerSortBubbles">
@@ -3161,6 +3182,22 @@
                             <option value="3">3x weight</option>
                         </select>
                         <button class="analyzer-btn secondary" onclick="addAnalyzerCriterion()">+ Add Criterion</button>
+                    </div>
+                    </div><!-- /analyzerScorePanel -->
+
+                    <div id="analyzerNotesPanel" style="display:none;">
+                        <div class="nh-field">
+                            <label>Notes</label>
+                            <textarea id="analyzerNotes" rows="6" placeholder="Notes, context, what agents told you about this property…" oninput="scheduleNotesSave()"></textarea>
+                        </div>
+                        <div class="nh-files-head">
+                            <strong>Documents &amp; Files</strong>
+                            <label class="analyzer-btn secondary nh-upload-btn" id="analyzerUploadBtn">⬆ Upload
+                                <input type="file" id="analyzerFileInput" multiple style="display:none" onchange="handleFileUpload(event)">
+                            </label>
+                        </div>
+                        <div id="analyzerUploadStatus" class="nh-uploading"></div>
+                        <div id="analyzerFilesList" class="nh-files-list"></div>
                     </div>
                 </div>
 
@@ -3783,10 +3820,15 @@
                 else if (city.score >= 45) { tier = 'C+'; tierColor = '#f97316'; }
                 else { tier = 'C'; tierColor = '#ef4444'; }
 
+                const agent = getTownAgent(city.name, city.state);
+                const agentCell = agent
+                    ? `<div class="agent-name">${escapeHtml(agent.name)}</div>${agent.phone ? `<div class="agent-phone">${escapeHtml(agent.phone)}</div>` : ''}`
+                    : `<span class="agent-add">+ Add</span>`;
                 return `
-                    <tr onclick="selectLocation('${city.name}', '${city.state}')" style="cursor: pointer;">
+                    <tr onclick="selectLocation('${jsAttr(city.name)}', '${city.state}')" style="cursor: pointer;">
                         <td class="rank-cell">${originalRank}</td>
                         <td class="market-cell">${city.name}, ${city.state}</td>
+                        <td class="agent-cell" onclick="event.stopPropagation(); openAgentModal('${jsAttr(city.name)}', '${city.state}')">${agentCell}</td>
                         <td class="score-cell" style="color: ${scoreColor}; font-weight: 600;">${city.score}</td>
                         <td class="tier-cell"><span class="tier-badge" style="background: ${tierColor}20; color: ${tierColor}; border: 1px solid ${tierColor};">${tier}</span></td>
                     </tr>
@@ -7524,11 +7566,14 @@
             const ourResortClass = m.isOurResort ? 'our-resort' : '';
             const similarClass = isSimilar ? 'similar-market' : '';
             const rankDisplay = rank && totalCities ? `<span class="market-rank">#<span class="market-rank-number">${rank}</span> of ${totalCities.toLocaleString()}</span>` : '';
+            const ag = (typeof getTownAgent === 'function') ? getTownAgent(m.name, m.state) : null;
+            const agentLine = ag ? `<div class="market-agent">🧑‍💼 ${escapeHtml(ag.name)}${ag.phone ? ' · ' + escapeHtml(ag.phone) : ''}</div>` : '';
             return `
                 <div class="hot-market-item ${ourResortClass} ${similarClass}" onclick='selectLocation(${JSON.stringify(m)})'>
                     <div>
                         <div class="market-name">${m.name} ${ourResortBadge}</div>
                         <div class="market-state">${m.state}${m.zip ? ' • ' + m.zip : ''}</div>
+                        ${agentLine}
                     </div>
                     <div class="market-score-section">
                         ${rankDisplay}
@@ -8049,7 +8094,7 @@
             let server = null;
             let serverTemplate = null;
             try {
-                const res = await fetch('/api/ranked-properties');
+                const res = await fetch('/api/ranked-properties', { headers: nhAuthHeaders() });
                 if (res.ok) {
                     const data = await res.json();
                     server = data.ranked || {};
@@ -8066,7 +8111,7 @@
                 try {
                     await fetch('/api/ranked-properties', {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: nhAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({ ranked: local, template: localTemplate })
                     });
                 } catch (e) { console.warn('Initial upload failed:', e); }
@@ -8079,7 +8124,7 @@
                     try {
                         await fetch('/api/ranked-properties', {
                             method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: nhAuthHeaders({ 'Content-Type': 'application/json' }),
                             body: JSON.stringify({ ranked: merged, template: serverTemplate || localTemplate })
                         });
                     } catch (e) { console.warn('Merge upload failed:', e); }
@@ -8100,7 +8145,7 @@
                 try {
                     await fetch('/api/ranked-properties', {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: nhAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({ ranked: rankedProperties, template: analyzerTemplate })
                     });
                 } catch (e) { console.warn('Template migration upload failed:', e); }
@@ -8160,7 +8205,7 @@
             try {
                 await fetch('/api/ranked-properties', {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: nhAuthHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ ranked: rankedProperties, template: analyzerTemplate })
                 });
             } catch (e) {
@@ -8315,10 +8360,16 @@
             analyzerEditingId = null;
             document.getElementById('analyzerPropName').value = '';
             document.getElementById('analyzerCardTitle').textContent = 'New Property';
+            ['analyzerPropTown', 'analyzerPropPrice', 'analyzerPropAcreage', 'analyzerPropRooms', 'analyzerPropUrl', 'analyzerNotes'].forEach(idv => {
+                const el = document.getElementById(idv); if (el) el.value = '';
+            });
+            const st = document.getElementById('analyzerPropStatus'); if (st) st.value = '';
             analyzerCriteria = getStartingCriteria();
             analyzerScores = {};
             analyzerCriteria.forEach(c => { analyzerScores[c.id] = 0; });
             renderAnalyzerCriteria();
+            renderAnalyzerFiles();
+            switchAnalyzerPanel('score');
         }
 
         async function saveAnalyzedProperty() {
@@ -8336,23 +8387,31 @@
             const now = Date.now();
             const id = analyzerEditingId || ('p_' + now + '_' + Math.random().toString(36).slice(2, 7));
             const existing = rankedProperties[id] || {};
+            const town = parseTownValue((document.getElementById('analyzerPropTown').value || '').trim());
             rankedProperties[id] = {
                 id,
                 name,
+                townName: town.name,
+                townState: town.state,
+                status: document.getElementById('analyzerPropStatus').value || '',
+                askingPrice: (document.getElementById('analyzerPropPrice').value || '').trim(),
+                acreage: (document.getElementById('analyzerPropAcreage').value || '').trim(),
+                rooms: (document.getElementById('analyzerPropRooms').value || '').trim(),
+                listingUrl: (document.getElementById('analyzerPropUrl').value || '').trim(),
+                notes: (document.getElementById('analyzerNotes').value || ''),
+                files: existing.files || [],
                 criteria: analyzerCriteria.map(c => ({ ...c, weight: normalizeWeight(c.weight) })),
                 scores: { ...analyzerScores },
                 percent: computeAnalyzerPercent(),
                 createdAt: existing.createdAt || now,
                 updatedAt: now
             };
+            // Keep edit mode so notes & files can now be attached to this id.
+            analyzerEditingId = id;
             await saveRankedPropertiesToStorage();
             renderRankedProperties();
-            // Stay in edit mode if we were editing — otherwise reset
-            if (!analyzerEditingId) {
-                resetAnalyzerForm();
-            } else {
-                document.getElementById('analyzerCardTitle').textContent = 'Editing: ' + name;
-            }
+            document.getElementById('analyzerCardTitle').textContent = 'Editing: ' + name;
+            renderAnalyzerFiles();
         }
 
         function openRankedProperty(id) {
@@ -8361,6 +8420,13 @@
             analyzerEditingId = id;
             document.getElementById('analyzerPropName').value = p.name;
             document.getElementById('analyzerCardTitle').textContent = 'Editing: ' + p.name;
+            document.getElementById('analyzerPropTown').value = (p.townName ? p.townName + (p.townState ? ', ' + p.townState : '') : '');
+            document.getElementById('analyzerPropStatus').value = p.status || '';
+            document.getElementById('analyzerPropPrice').value = p.askingPrice || '';
+            document.getElementById('analyzerPropAcreage').value = p.acreage || '';
+            document.getElementById('analyzerPropRooms').value = p.rooms || '';
+            document.getElementById('analyzerPropUrl').value = p.listingUrl || '';
+            document.getElementById('analyzerNotes').value = p.notes || '';
             analyzerCriteria = (p.criteria || []).map(c => ({ ...c, weight: normalizeWeight(c.weight) }));
             analyzerScores = { ...(p.scores || {}) };
             // Make sure each criterion has a score key
@@ -8368,6 +8434,8 @@
                 if (analyzerScores[c.id] === undefined) analyzerScores[c.id] = 0;
             });
             renderAnalyzerCriteria();
+            renderAnalyzerFiles();
+            switchAnalyzerPanel('score');
             window.scrollTo({ top: document.getElementById('analyzerTab').offsetTop, behavior: 'smooth' });
         }
 
@@ -8397,6 +8465,11 @@
                 const pct = typeof p.percent === 'number' ? p.percent : 0;
                 const updated = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : '';
                 const critCount = (p.criteria || []).length;
+                const fileCount = (p.files || []).length;
+                const statusBadge = p.status ? `<span class="status-badge" style="background:${statusColor(p.status)}1a;color:${statusColor(p.status)};">${escapeHtml(p.status)}</span>` : '';
+                const townLine = p.townName ? `<span class="card-town">📍 ${escapeHtml(p.townName)}${p.townState ? ', ' + escapeHtml(p.townState) : ''}</span>` : '';
+                const fileChip = fileCount ? `<span class="card-town">📎 ${fileCount}</span>` : '';
+                const badges = (statusBadge || townLine || fileChip) ? `<div class="ranked-card-badges">${statusBadge}${townLine}${fileChip}</div>` : '';
                 return `
                     <div class="ranked-card" onclick="openRankedProperty('${p.id}')">
                         <div class="ranked-card-head">
@@ -8404,6 +8477,7 @@
                             <div class="ranked-card-pct">${pct}%</div>
                         </div>
                         <div class="ranked-card-bar"><div class="ranked-card-bar-fill" style="width:${pct}%"></div></div>
+                        ${badges}
                         <div class="ranked-card-meta" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                             <span>${critCount} criteria · updated ${updated}</span>
                             <button class="analyzer-btn danger" style="padding:4px 10px;font-size:0.78rem;" onclick="deleteRankedProperty('${p.id}', event)">Delete</button>
@@ -8419,6 +8493,283 @@
             }[ch]));
         }
 
+        // ==================== AGENTS (real-estate contacts per town) ====================
+        let nhAgents = { agents: {}, assignments: {} };
+
+        function nhAuthHeaders(extra) {
+            const h = Object.assign({}, extra || {});
+            if (typeof nehemiahToken === 'string' && nehemiahToken) h['Authorization'] = 'Bearer ' + nehemiahToken;
+            return h;
+        }
+        function townKey(name, state) { return name + '|' + state; }
+        function getTownAgent(name, state) {
+            const id = nhAgents.assignments[townKey(name, state)];
+            return id ? nhAgents.agents[id] : null;
+        }
+        // Make an arbitrary string safe inside a single-quoted JS arg in an HTML attribute.
+        function jsAttr(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+        async function loadAgents() {
+            try {
+                const cached = localStorage.getItem('nehemiah-agents');
+                if (cached) nhAgents = JSON.parse(cached);
+            } catch (e) {}
+            try {
+                const res = await fetch('/api/agents', { headers: nhAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    nhAgents = { agents: data.agents || {}, assignments: data.assignments || {} };
+                    localStorage.setItem('nehemiah-agents', JSON.stringify(nhAgents));
+                }
+            } catch (e) { console.warn('Agents: server unreachable', e); }
+            return nhAgents;
+        }
+
+        async function saveAgents() {
+            localStorage.setItem('nehemiah-agents', JSON.stringify(nhAgents));
+            try {
+                await fetch('/api/agents', {
+                    method: 'PUT',
+                    headers: nhAuthHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(nhAgents)
+                });
+            } catch (e) { console.warn('Agents save failed', e); }
+        }
+
+        function refreshAgentViews() {
+            try { populateRankingsTable(); } catch (e) {}
+            try { populateHotMarkets(); } catch (e) {}
+        }
+
+        let agentModalTown = null;
+        function openAgentModal(name, state) {
+            agentModalTown = { name, state };
+            const current = getTownAgent(name, state);
+            const others = Object.values(nhAgents.agents).sort((a, b) => a.name.localeCompare(b.name));
+            const optionsHtml = others.map(a =>
+                `<option value="${a.id}" ${current && current.id === a.id ? 'selected' : ''}>${escapeHtml(a.name)}${a.brokerage ? ' — ' + escapeHtml(a.brokerage) : ''}</option>`
+            ).join('');
+            const c = current || { name: '', phone: '', email: '', brokerage: '' };
+            document.getElementById('agentModalBody').innerHTML = `
+                <div class="nh-modal-head">
+                    <h3>Agent — ${escapeHtml(name)}, ${escapeHtml(state)}</h3>
+                    <button class="nh-modal-x" onclick="closeAgentModal()">×</button>
+                </div>
+                ${others.length ? `<div class="nh-field">
+                    <label>Assign an existing agent</label>
+                    <select id="agentPickExisting" onchange="agentPickExistingChanged()">
+                        <option value="">— New agent / edit below —</option>
+                        ${optionsHtml}
+                    </select>
+                </div>` : ''}
+                <div class="nh-field"><label>Name</label><input id="agentName" type="text" value="${escapeHtml(c.name)}" placeholder="Jane Smith"></div>
+                <div class="nh-field"><label>Phone</label><input id="agentPhone" type="text" value="${escapeHtml(c.phone || '')}" placeholder="(555) 123-4567"></div>
+                <div class="nh-field"><label>Email</label><input id="agentEmail" type="text" value="${escapeHtml(c.email || '')}" placeholder="jane@brokerage.com"></div>
+                <div class="nh-field"><label>Brokerage</label><input id="agentBrokerage" type="text" value="${escapeHtml(c.brokerage || '')}" placeholder="Compass, Sotheby's…"></div>
+                <div class="nh-modal-actions">
+                    ${current ? `<button class="analyzer-btn danger" onclick="unassignAgentFromModal()">Unassign</button>` : '<span></span>'}
+                    <button class="analyzer-btn" onclick="saveAgentFromModal()">💾 Save</button>
+                </div>
+            `;
+            document.getElementById('agentModalOverlay').classList.add('active');
+        }
+
+        function agentPickExistingChanged() {
+            const id = document.getElementById('agentPickExisting').value;
+            const a = id ? nhAgents.agents[id] : null;
+            document.getElementById('agentName').value = a ? a.name : '';
+            document.getElementById('agentPhone').value = a ? (a.phone || '') : '';
+            document.getElementById('agentEmail').value = a ? (a.email || '') : '';
+            document.getElementById('agentBrokerage').value = a ? (a.brokerage || '') : '';
+        }
+
+        function closeAgentModal() {
+            document.getElementById('agentModalOverlay').classList.remove('active');
+        }
+
+        async function saveAgentFromModal() {
+            const name = (document.getElementById('agentName').value || '').trim();
+            if (!name) { alert('Enter an agent name.'); return; }
+            const phone = (document.getElementById('agentPhone').value || '').trim();
+            const email = (document.getElementById('agentEmail').value || '').trim();
+            const brokerage = (document.getElementById('agentBrokerage').value || '').trim();
+            const pick = document.getElementById('agentPickExisting');
+            let id = pick && pick.value ? pick.value : null;
+            const current = getTownAgent(agentModalTown.name, agentModalTown.state);
+            if (!id && current) id = current.id;
+            if (!id) id = 'a_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            const prev = nhAgents.agents[id] || {};
+            nhAgents.agents[id] = { id, name, phone, email, brokerage, createdAt: prev.createdAt || Date.now(), updatedAt: Date.now() };
+            nhAgents.assignments[townKey(agentModalTown.name, agentModalTown.state)] = id;
+            await saveAgents();
+            closeAgentModal();
+            refreshAgentViews();
+        }
+
+        async function unassignAgentFromModal() {
+            delete nhAgents.assignments[townKey(agentModalTown.name, agentModalTown.state)];
+            await saveAgents();
+            closeAgentModal();
+            refreshAgentViews();
+        }
+
+        // ==================== PROPERTY ANALYZER: town, notes & files ====================
+        const DEAL_STAGES = ['Watching', 'Researching', 'Visited', 'Offer', 'Under Contract', 'Owned', 'Passed'];
+        function statusColor(s) {
+            return ({
+                'Watching': '#64748b', 'Researching': '#3b82f6', 'Visited': '#0891b2',
+                'Offer': '#f59e0b', 'Under Contract': '#7c3aed', 'Owned': '#10b981', 'Passed': '#ef4444'
+            })[s] || '#64748b';
+        }
+
+        function populateAnalyzerTownList() {
+            const dl = document.getElementById('analyzerTownList');
+            if (!dl || typeof usCities === 'undefined') return;
+            dl.innerHTML = [...usCities]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(c => `<option value="${escapeHtml(c.name + ', ' + c.state)}">`).join('');
+        }
+        function parseTownValue(val) {
+            if (!val) return { name: '', state: '' };
+            const m = val.match(/^(.*),\s*([A-Za-z]{2})$/);
+            if (m) return { name: m[1].trim(), state: m[2].toUpperCase() };
+            return { name: val.trim(), state: '' };
+        }
+
+        function switchAnalyzerPanel(panel) {
+            document.querySelectorAll('.analyzer-subtab').forEach(b => b.classList.toggle('active', b.dataset.panel === panel));
+            const score = document.getElementById('analyzerScorePanel');
+            const notes = document.getElementById('analyzerNotesPanel');
+            if (score) score.style.display = panel === 'score' ? '' : 'none';
+            if (notes) notes.style.display = panel === 'notes' ? '' : 'none';
+            if (panel === 'notes') renderAnalyzerFiles();
+        }
+
+        let _notesSaveTimer = null;
+        function scheduleNotesSave() {
+            if (!analyzerEditingId) return;
+            clearTimeout(_notesSaveTimer);
+            _notesSaveTimer = setTimeout(() => {
+                const p = rankedProperties[analyzerEditingId];
+                if (!p) return;
+                p.notes = document.getElementById('analyzerNotes').value;
+                p.updatedAt = Date.now();
+                saveRankedPropertiesToStorage();
+            }, 700);
+        }
+
+        function fmtSize(bytes) {
+            if (!bytes && bytes !== 0) return '';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+        function fileUrl(f, download) {
+            const params = new URLSearchParams({ pathname: f.pathname, token: nehemiahToken || '', ct: f.contentType || '' });
+            if (download) { params.set('download', '1'); params.set('name', f.name); }
+            else params.set('name', f.name);
+            return '/api/file?' + params.toString();
+        }
+
+        function renderAnalyzerFiles() {
+            const wrap = document.getElementById('analyzerFilesList');
+            if (!wrap) return;
+            const p = analyzerEditingId ? rankedProperties[analyzerEditingId] : null;
+            const files = (p && p.files) || [];
+            const cnt = document.getElementById('analyzerNotesCount');
+            if (cnt) cnt.textContent = files.length ? '(' + files.length + ')' : '';
+            const uploadBtn = document.getElementById('analyzerUploadBtn');
+            if (uploadBtn) uploadBtn.style.display = analyzerEditingId ? '' : 'none';
+            if (!analyzerEditingId) { wrap.innerHTML = '<div class="nh-hint">Save the property first, then reopen it to attach notes &amp; files.</div>'; return; }
+            if (!files.length) { wrap.innerHTML = '<div class="nh-hint">No files yet. Upload PDFs, spreadsheets, or photos agents send you.</div>'; return; }
+            wrap.innerHTML = files.map(f => {
+                const isImg = (f.contentType || '').startsWith('image/');
+                const isPdf = (f.contentType || '') === 'application/pdf';
+                const thumb = isImg ? `<img class="nh-file-thumb" src="${fileUrl(f, false)}" alt="">` : `<div class="nh-file-ico">${isPdf ? '📄' : '📎'}</div>`;
+                return `<div class="nh-file-row">
+                    ${thumb}
+                    <div class="nh-file-meta">
+                        <div class="nh-file-name">${escapeHtml(f.name)}</div>
+                        <div class="nh-file-sub">${fmtSize(f.size)} · ${f.uploadedAt ? new Date(f.uploadedAt).toLocaleDateString() : ''}</div>
+                    </div>
+                    <div class="nh-file-actions">
+                        ${(isImg || isPdf) ? `<a class="nh-file-btn" href="${fileUrl(f, false)}" target="_blank" rel="noopener">Preview</a>` : ''}
+                        <a class="nh-file-btn" href="${fileUrl(f, true)}">Download</a>
+                        <button class="nh-file-btn danger" onclick="deletePropertyFile('${f.id}')">Delete</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function handleFileUpload(ev) {
+            const input = ev.target;
+            const files = Array.from(input.files || []);
+            if (!files.length) return;
+            if (!analyzerEditingId) { alert('Save the property first, then upload files.'); input.value = ''; return; }
+            if (!window.nhBlobUpload) { alert('File uploader is still loading — try again in a moment.'); input.value = ''; return; }
+            const p = rankedProperties[analyzerEditingId];
+            if (!p.files) p.files = [];
+            const status = document.getElementById('analyzerUploadStatus');
+            for (const file of files) {
+                if (status) status.textContent = 'Uploading ' + file.name + '…';
+                try {
+                    const result = await window.nhBlobUpload(
+                        `nehemiah/property-files/${analyzerEditingId}/${file.name}`,
+                        file,
+                        { access: 'private', handleUploadUrl: '/api/upload', clientPayload: nehemiahToken, contentType: file.type || 'application/octet-stream' }
+                    );
+                    p.files.push({
+                        id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                        name: file.name, pathname: result.pathname, url: result.url,
+                        size: file.size, contentType: file.type || 'application/octet-stream', uploadedAt: Date.now()
+                    });
+                    p.updatedAt = Date.now();
+                    await saveRankedPropertiesToStorage();
+                    renderAnalyzerFiles();
+                } catch (err) {
+                    console.error('Upload failed', err);
+                    alert('Upload failed for ' + file.name + ': ' + (err.message || err));
+                }
+            }
+            if (status) status.textContent = '';
+            input.value = '';
+            renderRankedProperties();
+        }
+
+        async function deletePropertyFile(fileId) {
+            const p = analyzerEditingId ? rankedProperties[analyzerEditingId] : null;
+            if (!p || !p.files) return;
+            const f = p.files.find(x => x.id === fileId);
+            if (!f) return;
+            if (!confirm('Delete "' + f.name + '"? This removes the stored file.')) return;
+            try {
+                await fetch('/api/file?' + new URLSearchParams({ pathname: f.pathname, token: nehemiahToken || '' }), { method: 'DELETE' });
+            } catch (e) { console.warn('Blob delete failed (removing metadata anyway)', e); }
+            p.files = p.files.filter(x => x.id !== fileId);
+            p.updatedAt = Date.now();
+            await saveRankedPropertiesToStorage();
+            renderAnalyzerFiles();
+            renderRankedProperties();
+        }
+
+        // ==================== EXPORT ALL DATA ====================
+        function exportAllData() {
+            const data = {
+                exportedAt: new Date().toISOString(),
+                agents: nhAgents,
+                properties: rankedProperties,
+                analyzerTemplate: (typeof analyzerTemplate !== 'undefined' ? analyzerTemplate : null)
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'nehemiah-export-' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(a.href);
+        }
+
         document.addEventListener('DOMContentLoaded', async function() {
             // Sync the sort bubble active state with persisted preference
             document.querySelectorAll('#analyzerSortBubbles .sort-bubble').forEach(b => {
@@ -8429,6 +8780,8 @@
             analyzerScores = {};
             analyzerCriteria.forEach(c => { analyzerScores[c.id] = 0; });
             renderAnalyzerCriteria();
+            populateAnalyzerTownList();
+            loadAgents().then(refreshAgentViews);
             await loadRankedProperties();
             // Once template is loaded, repopulate the form so customized labels appear
             if (analyzerEditingId === null) {
@@ -8438,6 +8791,75 @@
                 renderAnalyzerCriteria();
             }
         });
+    </script>
+
+    <!-- Agent / contact modal -->
+    <div class="nh-modal-overlay" id="agentModalOverlay" onclick="if(event.target===this)closeAgentModal()">
+        <div class="nh-modal" id="agentModalBody"></div>
+    </div>
+
+    <!-- Town datalist for the property analyzer -->
+    <datalist id="analyzerTownList"></datalist>
+
+    <style>
+    /* ---- Agent column / map line ---- */
+    .rankings-table td.agent-cell { cursor: pointer; max-width: 180px; }
+    .rankings-table td.agent-cell:hover { background: rgba(0,212,255,0.06); }
+    .agent-name { font-weight: 600; color: #0f172a; font-size: 0.86rem; line-height: 1.2; }
+    .agent-phone { color: #475569; font-size: 0.78rem; }
+    .agent-add { color: #94a3b8; font-size: 0.8rem; }
+    .market-agent { font-size: 0.74rem; color: #0891b2; margin-top: 2px; font-weight: 500; }
+
+    /* ---- Generic modal ---- */
+    .nh-modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 16px; }
+    .nh-modal-overlay.active { display: flex; }
+    .nh-modal { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; padding: 20px 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .nh-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .nh-modal-head h3 { margin: 0; font-size: 1.05rem; color: #0f172a; }
+    .nh-modal-x { background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: #94a3b8; }
+    .nh-field { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nh-field label { font-size: 0.78rem; font-weight: 600; color: #475569; }
+    .nh-field input, .nh-field select, .nh-field textarea { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+    .nh-field textarea { resize: vertical; }
+    .nh-modal-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 16px; }
+
+    /* ---- Analyzer details + sub-tabs + files ---- */
+    .analyzer-details-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+    .analyzer-details-grid > div { display: flex; flex-direction: column; gap: 4px; }
+    .analyzer-details-grid label { font-size: 0.72rem; font-weight: 600; color: #64748b; }
+    .analyzer-details-grid input, .analyzer-details-grid select { padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.86rem; font-family: inherit; }
+    @media (max-width: 640px) { .analyzer-details-grid { grid-template-columns: 1fr 1fr; } }
+    .analyzer-subtabs { display: flex; gap: 6px; margin: 14px 0 12px; border-bottom: 1px solid #e2e8f0; }
+    .analyzer-subtab { background: none; border: none; padding: 8px 12px; font-size: 0.88rem; font-weight: 600; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; }
+    .analyzer-subtab.active { color: #0891b2; border-bottom-color: #0891b2; }
+    .nh-files-head { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+    .nh-upload-btn { cursor: pointer; }
+    .nh-files-list { display: flex; flex-direction: column; gap: 8px; }
+    .nh-file-row { display: flex; align-items: center; gap: 10px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 10px; }
+    .nh-file-thumb { width: 42px; height: 42px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+    .nh-file-ico { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: #f1f5f9; border-radius: 6px; flex-shrink: 0; }
+    .nh-file-meta { flex: 1; min-width: 0; }
+    .nh-file-name { font-weight: 600; font-size: 0.85rem; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nh-file-sub { font-size: 0.74rem; color: #94a3b8; }
+    .nh-file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .nh-file-btn { font-size: 0.76rem; padding: 4px 9px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #334155; cursor: pointer; text-decoration: none; }
+    .nh-file-btn.danger { color: #dc2626; border-color: #fecaca; }
+    .nh-hint { font-size: 0.8rem; color: #94a3b8; padding: 6px 2px; }
+    .nh-uploading { font-size: 0.8rem; color: #0891b2; padding: 6px 2px; }
+    /* ---- Property card status badge ---- */
+    .ranked-card-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .status-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .card-town { font-size: 0.74rem; color: #64748b; }
+    </style>
+
+    <!-- Browser → Vercel Blob direct upload (handles files larger than the serverless body limit) -->
+    <script type="module">
+        try {
+            const { upload } = await import('https://esm.sh/@vercel/blob@2.3.3/client');
+            window.nhBlobUpload = upload;
+        } catch (e) {
+            console.error('Blob client failed to load', e);
+        }
     </script>
 
     <!-- GIS Detail Modal -->
@@ -8480,6 +8902,11 @@
     function nehemiahUnlock() {
         document.getElementById('loginOverlay').classList.add('hidden');
         document.getElementById('appWrapper').classList.remove('locked');
+        // Now that we hold a token, (re)load the gated data and refresh the views.
+        try {
+            if (typeof loadAgents === 'function') loadAgents().then(() => { try { refreshAgentViews(); } catch (e) {} });
+            if (typeof loadRankedProperties === 'function') loadRankedProperties();
+        } catch (e) { console.warn('post-unlock refresh failed', e); }
         // Force map resize after unlock (Leaflet needs this when container was hidden)
         setTimeout(() => {
             if (window.map && typeof window.map.invalidateSize === 'function') {
