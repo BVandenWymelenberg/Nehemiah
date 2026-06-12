@@ -3457,39 +3457,55 @@
 
         // ============ REAL-TIME SCORING ENGINE ============
         // Access penalties for known hard-to-reach locations
+        // Access penalty = drive-time to a genuine LARGE-HUB airport, offset only
+        // by a nearby regional field to the degree its real passenger volume /
+        // year-round connectivity earns it (FAA CY2024 hub class). A seasonal
+        // nonhub strip (Telluride/Aspen/Eagle/Hayden) barely offsets remoteness;
+        // a broad small hub (Bozeman/Reno/Spokane/Boise) offsets meaningfully.
         const accessPenalties = {
-            // EXTREME: Ferry/small plane only, or 4+ hours from any major metro
+            // EXTREME (-38 to -45): island/ferry/small-plane only, or 4.5hr+ to a large hub
             'Nantucket|MA': -45, 'Mackinac Island|MI': -45, 'Block Island|RI': -45,
-            'Hana|HI': -40, 'Canyon Point|UT': -40,
-            'Barnard|VT': -38, 'Dolores|CO': -38, 'Saratoga|WY': -38,
-            'Greenough|MT': -38, 'Darby|MT': -38, 'Wanship|UT': -35,
-            // VERY DIFFICULT: 3+ hours from major metro, mountain passes
-            'Telluride|CO': -35, 'Key West|FL': -35, 'Big Sur|CA': -32,
-            'Walland|TN': -30, 'Morris|CT': -28, 'Meadows of Dan|VA': -28,
-            // DIFFICULT: 2-3 hours, seasonal access
-            'Aspen|CO': -22, 'Jackson|WY': -22, 'Teton Village|WY': -22,
-            'Big Sky|MT': -22, 'Sun Valley|ID': -20, 'Ketchum|ID': -20,
-            'Stowe|VT': -18, 'Lake Placid|NY': -18,
-            'Whitefish|MT': -18, 'Vail|CO': -15, 'Sedona|AZ': -12,
-            'Kennebunkport|ME': -12, 'Bar Harbor|ME': -18, 'Highlands|NC': -18,
-            'Steamboat Springs|CO': -20, 'Bozeman|MT': -15, 'Bend|OR': -12,
-            // MODERATE: 1-2 hours from metro
-            'Park City|UT': -8, 'Santa Fe|NM': -15, 'Carmel|CA': -12,
-            'Carmel Valley|CA': -15, 'Ojai|CA': -12, 'Healdsburg|CA': -12,
-            'Calistoga|CA': -12, 'St. Helena|CA': -8, 'Napa|CA': -5,
-            // HAWAII - water access
-            'Princeville|HI': -18, 'Kapalua|HI': -12, 'Wailea|HI': -8,
-            'Kona|HI': -12, 'Kohala Coast|HI': -15,
-            // MIDWEST LAKE COUNTRY
-            'Door County|WI': -15, 'Fish Creek|WI': -18, 'Ephraim|WI': -18,
+            'Telluride|CO': -42, 'Hana|HI': -40, 'Canyon Point|UT': -40,
+            // VERY HIGH (-28 to -35): 3.5-4.5hr to a large hub; nonhub/seasonal airport only
+            'Key West|FL': -35, 'Saratoga|WY': -35, 'Crested Butte|CO': -32,
+            'Darby|MT': -32, 'Bandon|OR': -32, 'Dolores|CO': -32, 'Big Sur|CA': -30,
+            'Aspen|CO': -30, 'Snowmass Village|CO': -30, 'Greenough|MT': -30,
+            'Mammoth Lakes|CA': -30, 'Winthrop|WA': -30, 'Walland|TN': -30,
+            // HIGH (-22 to -28): 2.5-3.5hr to a large hub, or far w/ moderate regional
+            'Steamboat Springs|CO': -28, 'Morris|CT': -28, 'Meadows of Dan|VA': -28,
+            'Mendocino|CA': -28, 'Jackson|WY': -26, 'Teton Village|WY': -26,
+            'Whitefish|MT': -25, 'Bigfork|MT': -25, 'Sun Valley|ID': -25, 'Ketchum|ID': -25,
+            'McCall|ID': -25, 'Bar Harbor|ME': -25, 'Moab|UT': -25, 'Big Sky|MT': -24,
+            'Taos Ski Valley|NM': -24, 'Lutsen|MN': -22, 'Tofte|MN': -22,
+            'Taos|NM': -22, 'Barnard|VT': -22, 'Lake Placid|NY': -22, 'Pray|MT': -22,
+            // MODERATE (-15 to -20): 1.5-2.5hr to a large hub, or broad regional nearby
+            'Stratton|VT': -20, 'Killington|VT': -20, 'Springdale|UT': -18,
+            'Bozeman|MT': -18, 'Fish Creek|WI': -18, 'Ephraim|WI': -18,
             'Sister Bay|WI': -18, 'Egg Harbor|WI': -18, 'Baileys Harbor|WI': -18,
-            'Sturgeon Bay|WI': -12, 'Lutsen|MN': -22, 'Tofte|MN': -22,
-            'Beaver Bay|MN': -18, 'Two Harbors|MN': -15,
-            // GOOD ACCESS (minimal penalty)
-            'Scottsdale|AZ': 0, 'Paradise Valley|AZ': 0, 'Tucson|AZ': -5,
+            'Princeville|HI': -18, 'Highlands|NC': -18, 'Beaver Bay|MN': -18,
+            'Bretton Woods|NH': -18, 'Manchester|VT': -18, 'Woodstock|VT': -18,
+            'Leavenworth|WA': -18, 'Beaver Creek|CO': -15, 'Vail|CO': -15,
+            'Carmel Valley|CA': -15, 'Santa Fe|NM': -12, 'Bend|OR': -15,
+            'Sunriver|OR': -15, 'Sisters|OR': -15, 'Door County|WI': -15,
+            'Two Harbors|MN': -15, 'Kohala Coast|HI': -15, 'Stowe|VT': -15,
+            'Boothbay Harbor|ME': -15, 'Truckee|CA': -15, 'South Lake Tahoe|CA': -15,
+            'Incline Village|NV': -15,
+            // LOW (-8 to -12): 1-2hr to a large hub, or large hub <1hr w/ pass/avalanche risk
+            'Carmel|CA': -12, 'Ojai|CA': -12, 'Kapalua|HI': -12, 'Kona|HI': -12,
+            'Sturgeon Bay|WI': -12, 'Sedona|AZ': -12, 'Breckenridge|CO': -12,
+            'Keystone|CO': -12, 'Coeur d\'Alene|ID': -12, 'Lenox|MA': -12,
+            'Bolton Landing|NY': -12, 'Government Camp|OR': -12, 'Winter Park|CO': -10,
+            'Estes Park|CO': -10, 'Healdsburg|CA': -10, 'Calistoga|CA': -10,
+            'Monterey|CA': -10, 'Cannon Beach|OR': -10, 'Kennebunkport|ME': -10,
+            'Payson|AZ': -10,
+            // MINIMAL (0 to -8): large hub <1hr, or excellent year-round access
+            'St. Helena|CA': -8, 'Sundance|UT': -8, 'Snowbird|UT': -8, 'Alta|UT': -8,
+            'Wanship|UT': -8, 'Sonoma|CA': -8, 'Yountville|CA': -8, 'Rutherford|CA': -8,
+            'Half Moon Bay|CA': -8, 'Asheville|NC': -8, 'Wailea|HI': -8,
+            'Napa|CA': -5, 'Park City|UT': -5, 'Deer Valley|UT': -5, 'Palm Springs|CA': -5,
+            'Tucson|AZ': -5, 'Montecito|CA': -5, 'Scottsdale|AZ': 0, 'Paradise Valley|AZ': 0,
             'La Jolla|CA': 0, 'Laguna Beach|CA': 0, 'Newport Beach|CA': 0,
-            'Charleston|SC': 0, 'Savannah|GA': 0, 'Asheville|NC': -8,
-            'New York|NY': 0, 'Montecito|CA': -5
+            'Charleston|SC': 0, 'Savannah|GA': 0, 'New York|NY': 0
         };
 
         // Get metro population for a city (from resort data or estimate)
