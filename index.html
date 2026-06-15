@@ -8676,6 +8676,65 @@
             return '/api/file?' + params.toString();
         }
 
+        // Browsers can render these inline as thumbnails; HEIC/HEIF/TIFF can't.
+        function fileThumbable(f) {
+            const ct = (f.contentType || '').toLowerCase();
+            const name = (f.name || '').toLowerCase();
+            if (!ct.startsWith('image/')) return false;
+            if (/heic|heif|tiff/.test(ct) || /\.(heic|heif|tif|tiff)$/.test(name)) return false;
+            return true;
+        }
+        function fileIcon(f) {
+            const ct = (f.contentType || '').toLowerCase();
+            const name = (f.name || '').toLowerCase();
+            if (ct.startsWith('image/')) return '🖼️';
+            if (ct === 'application/pdf' || name.endsWith('.pdf')) return '📄';
+            if (ct.startsWith('video/') || /\.(mov|mp4|m4v|avi|mkv|webm)$/.test(name)) return '🎬';
+            if (/sheet|excel|csv/.test(ct) || /\.(xlsx?|csv|numbers)$/.test(name)) return '📊';
+            if (/word|document/.test(ct) || /\.(docx?|pages)$/.test(name)) return '📝';
+            return '📎';
+        }
+        function findPropFile(id) {
+            const p = analyzerEditingId ? rankedProperties[analyzerEditingId] : null;
+            return p && (p.files || []).find(x => x.id === id);
+        }
+        function openPropFile(id) {
+            closeFileMenu();
+            const f = findPropFile(id);
+            if (f) window.open(fileUrl(f, false), '_blank', 'noopener');
+        }
+        function downloadPropFile(id) {
+            closeFileMenu();
+            const f = findPropFile(id);
+            if (!f) return;
+            const a = document.createElement('a');
+            a.href = fileUrl(f, true);
+            a.download = f.name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+        let _fileMenuEl = null;
+        function closeFileMenu() {
+            if (_fileMenuEl) { _fileMenuEl.remove(); _fileMenuEl = null; document.removeEventListener('click', closeFileMenu); }
+        }
+        function showFileMenu(ev, id) {
+            ev.preventDefault();
+            closeFileMenu();
+            const menu = document.createElement('div');
+            menu.className = 'nh-ctx';
+            menu.innerHTML =
+                '<button onclick="openPropFile(\'' + id + '\')">Open</button>' +
+                '<button onclick="downloadPropFile(\'' + id + '\')">Download</button>' +
+                '<div class="nh-ctx-sep"></div>' +
+                '<button class="danger" onclick="deletePropertyFile(\'' + id + '\')">Delete</button>';
+            document.body.appendChild(menu);
+            menu.style.left = Math.min(ev.clientX, window.innerWidth - 170) + 'px';
+            menu.style.top = Math.min(ev.clientY, window.innerHeight - 140) + 'px';
+            _fileMenuEl = menu;
+            setTimeout(() => document.addEventListener('click', closeFileMenu), 0);
+        }
+
         function renderAnalyzerFiles() {
             const wrap = document.getElementById('analyzerFilesList');
             if (!wrap) return;
@@ -8685,23 +8744,17 @@
             if (cnt) cnt.textContent = files.length ? '(' + files.length + ')' : '';
             const dz = document.getElementById('analyzerDropzone');
             if (dz) dz.style.display = analyzerEditingId ? '' : 'none';
-            if (!analyzerEditingId) { wrap.innerHTML = '<div class="nh-hint">Save the property first, then reopen it to attach notes &amp; files.</div>'; return; }
-            if (!files.length) { wrap.innerHTML = '<div class="nh-hint">No files yet. Upload PDFs, spreadsheets, or photos agents send you.</div>'; return; }
+            if (!analyzerEditingId) { wrap.className = ''; wrap.innerHTML = '<div class="nh-hint">Save the property first, then reopen it to attach notes &amp; files.</div>'; return; }
+            if (!files.length) { wrap.className = ''; wrap.innerHTML = '<div class="nh-hint">No files yet. Drag &amp; drop PDFs, spreadsheets, or photos agents send you.</div>'; return; }
+            wrap.className = 'nh-files-grid';
             wrap.innerHTML = files.map(f => {
-                const isImg = (f.contentType || '').startsWith('image/');
-                const isPdf = (f.contentType || '') === 'application/pdf';
-                const thumb = isImg ? `<img class="nh-file-thumb" src="${fileUrl(f, false)}" alt="">` : `<div class="nh-file-ico">${isPdf ? '📄' : '📎'}</div>`;
-                return `<div class="nh-file-row">
+                const thumb = fileThumbable(f)
+                    ? `<div class="nh-tile-thumb"><img loading="lazy" src="${fileUrl(f, false)}" alt=""></div>`
+                    : `<div class="nh-tile-thumb"><span class="nh-tile-ico">${fileIcon(f)}</span></div>`;
+                return `<div class="nh-file-tile" title="${escapeHtml(f.name)} — double-click to open, right-click for options"
+                            ondblclick="openPropFile('${f.id}')" oncontextmenu="showFileMenu(event,'${f.id}')">
                     ${thumb}
-                    <div class="nh-file-meta">
-                        <div class="nh-file-name">${escapeHtml(f.name)}</div>
-                        <div class="nh-file-sub">${fmtSize(f.size)} · ${f.uploadedAt ? new Date(f.uploadedAt).toLocaleDateString() : ''}</div>
-                    </div>
-                    <div class="nh-file-actions">
-                        ${(isImg || isPdf) ? `<a class="nh-file-btn" href="${fileUrl(f, false)}" target="_blank" rel="noopener">Preview</a>` : ''}
-                        <a class="nh-file-btn" href="${fileUrl(f, true)}">Download</a>
-                        <button class="nh-file-btn danger" onclick="deletePropertyFile('${f.id}')">Delete</button>
-                    </div>
+                    <div class="nh-tile-name">${escapeHtml(f.name)}</div>
                 </div>`;
             }).join('');
         }
@@ -8885,6 +8938,20 @@
     .nh-dropzone-icon { font-size: 1.6rem; line-height: 1; margin-bottom: 6px; color: #0891b2; }
     .nh-dropzone-text { font-weight: 600; color: #334155; font-size: 0.95rem; }
     .nh-dropzone-sub { font-size: 0.78rem; color: #94a3b8; margin-top: 3px; }
+    /* ---- File grid (Finder-style icon view) ---- */
+    .nh-files-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 10px; }
+    .nh-file-tile { text-align: center; cursor: pointer; user-select: none; padding: 8px 4px; border-radius: 8px; border: 1px solid transparent; }
+    .nh-file-tile:hover { background: #f1f5f9; border-color: #e2e8f0; }
+    .nh-tile-thumb { width: 86px; height: 86px; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px; overflow: hidden; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .nh-tile-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .nh-tile-ico { font-size: 2.4rem; line-height: 1; }
+    .nh-tile-name { font-size: 0.74rem; color: #334155; line-height: 1.2; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    /* ---- Right-click context menu ---- */
+    .nh-ctx { position: fixed; z-index: 5000; background: #fff; border: 1px solid #e2e8f0; border-radius: 9px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); padding: 4px; min-width: 152px; }
+    .nh-ctx button { display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; font-size: 0.85rem; color: #334155; cursor: pointer; border-radius: 6px; }
+    .nh-ctx button:hover { background: #f1f5f9; }
+    .nh-ctx button.danger { color: #dc2626; }
+    .nh-ctx-sep { height: 1px; background: #f1f5f9; margin: 4px 6px; }
     /* ---- Property card status badge ---- */
     .ranked-card-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
     .status-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
