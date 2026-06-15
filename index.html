@@ -3192,9 +3192,14 @@
                         </div>
                         <div class="nh-files-head">
                             <strong>Documents &amp; Files</strong>
-                            <label class="analyzer-btn secondary nh-upload-btn" id="analyzerUploadBtn">⬆ Upload
-                                <input type="file" id="analyzerFileInput" multiple style="display:none" onchange="handleFileUpload(event)">
-                            </label>
+                        </div>
+                        <input type="file" id="analyzerFileInput" multiple style="display:none" onchange="handleFileUpload(event)">
+                        <div id="analyzerDropzone" class="nh-dropzone"
+                             onclick="document.getElementById('analyzerFileInput').click()"
+                             ondragover="analyzerDragOver(event)" ondragleave="analyzerDragLeave(event)" ondrop="analyzerDropHandler(event)">
+                            <div class="nh-dropzone-icon">⬆</div>
+                            <div class="nh-dropzone-text">Drag &amp; drop files here</div>
+                            <div class="nh-dropzone-sub">or click to browse · PDFs, spreadsheets, photos (up to 1&nbsp;GB)</div>
                         </div>
                         <div id="analyzerUploadStatus" class="nh-uploading"></div>
                         <div id="analyzerFilesList" class="nh-files-list"></div>
@@ -8678,8 +8683,8 @@
             const files = (p && p.files) || [];
             const cnt = document.getElementById('analyzerNotesCount');
             if (cnt) cnt.textContent = files.length ? '(' + files.length + ')' : '';
-            const uploadBtn = document.getElementById('analyzerUploadBtn');
-            if (uploadBtn) uploadBtn.style.display = analyzerEditingId ? '' : 'none';
+            const dz = document.getElementById('analyzerDropzone');
+            if (dz) dz.style.display = analyzerEditingId ? '' : 'none';
             if (!analyzerEditingId) { wrap.innerHTML = '<div class="nh-hint">Save the property first, then reopen it to attach notes &amp; files.</div>'; return; }
             if (!files.length) { wrap.innerHTML = '<div class="nh-hint">No files yet. Upload PDFs, spreadsheets, or photos agents send you.</div>'; return; }
             wrap.innerHTML = files.map(f => {
@@ -8701,14 +8706,34 @@
             }).join('');
         }
 
-        async function handleFileUpload(ev) {
+        function handleFileUpload(ev) {
             const input = ev.target;
-            const files = Array.from(input.files || []);
+            uploadFiles(input.files).finally(() => { input.value = ''; });
+        }
+        function analyzerDragOver(ev) {
+            ev.preventDefault();
+            const dz = document.getElementById('analyzerDropzone');
+            if (dz) dz.classList.add('dragover');
+        }
+        function analyzerDragLeave(ev) {
+            const dz = document.getElementById('analyzerDropzone');
+            if (dz) dz.classList.remove('dragover');
+        }
+        function analyzerDropHandler(ev) {
+            ev.preventDefault();
+            const dz = document.getElementById('analyzerDropzone');
+            if (dz) dz.classList.remove('dragover');
+            if (ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files.length) {
+                uploadFiles(ev.dataTransfer.files);
+            }
+        }
+        async function uploadFiles(fileList) {
+            const files = Array.from(fileList || []);
             if (!files.length) return;
-            if (!analyzerEditingId) { alert('Save the property first, then upload files.'); input.value = ''; return; }
+            if (!analyzerEditingId) { alert('Save the property first, then upload files.'); return; }
             const tok = (typeof nehemiahToken === 'string' && nehemiahToken) ? nehemiahToken : (sessionStorage.getItem('nehemiah-token') || '');
-            if (!tok) { alert('Please log in again before uploading.'); input.value = ''; return; }
-            if (!window.nhBlobUpload) { alert('File uploader is still loading — try again in a few seconds.'); input.value = ''; return; }
+            if (!tok) { alert('Please log in again before uploading.'); return; }
+            if (!window.nhBlobUpload) { alert('File uploader is still loading — try again in a few seconds.'); return; }
             const p = rankedProperties[analyzerEditingId];
             if (!p.files) p.files = [];
             const status = document.getElementById('analyzerUploadStatus');
@@ -8740,7 +8765,6 @@
                 }
             }
             if (status) status.textContent = '';
-            input.value = '';
             renderRankedProperties();
         }
 
@@ -8854,6 +8878,13 @@
     .nh-file-btn.danger { color: #dc2626; border-color: #fecaca; }
     .nh-hint { font-size: 0.8rem; color: #94a3b8; padding: 6px 2px; }
     .nh-uploading { font-size: 0.8rem; color: #0891b2; padding: 6px 2px; }
+    /* ---- Drag & drop zone ---- */
+    .nh-dropzone { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 22px 16px; text-align: center; cursor: pointer; background: #f8fafc; transition: border-color .15s, background .15s; margin-bottom: 10px; }
+    .nh-dropzone:hover { border-color: #0891b2; background: #f0fdff; }
+    .nh-dropzone.dragover { border-color: #0891b2; background: #e0f7fb; }
+    .nh-dropzone-icon { font-size: 1.6rem; line-height: 1; margin-bottom: 6px; color: #0891b2; }
+    .nh-dropzone-text { font-weight: 600; color: #334155; font-size: 0.95rem; }
+    .nh-dropzone-sub { font-size: 0.78rem; color: #94a3b8; margin-top: 3px; }
     /* ---- Property card status badge ---- */
     .ranked-card-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
     .status-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
