@@ -8706,18 +8706,35 @@
             const files = Array.from(input.files || []);
             if (!files.length) return;
             if (!analyzerEditingId) { alert('Save the property first, then upload files.'); input.value = ''; return; }
-            if (!window.nhBlobUpload) { alert('File uploader is still loading — try again in a moment.'); input.value = ''; return; }
+            const tok = (typeof nehemiahToken === 'string' && nehemiahToken) ? nehemiahToken : (sessionStorage.getItem('nehemiah-token') || '');
+            if (!tok) { alert('Please log in again before uploading.'); input.value = ''; return; }
             const p = rankedProperties[analyzerEditingId];
             if (!p.files) p.files = [];
             const status = document.getElementById('analyzerUploadStatus');
+            const MAX = 4.4 * 1024 * 1024; // Vercel serverless request-body limit (~4.5MB)
             for (const file of files) {
+                if (file.size > MAX) {
+                    alert('"' + file.name + '" is ' + (file.size / 1048576).toFixed(1) + ' MB. Uploads are currently capped at ~4 MB per file — ask Claude to enable large-file uploads if you need bigger.');
+                    continue;
+                }
                 if (status) status.textContent = 'Uploading ' + file.name + '…';
                 try {
-                    const result = await window.nhBlobUpload(
-                        `nehemiah/property-files/${analyzerEditingId}/${file.name}`,
-                        file,
-                        { access: 'private', handleUploadUrl: '/api/upload', clientPayload: nehemiahToken, contentType: file.type || 'application/octet-stream' }
-                    );
+                    const qs = new URLSearchParams({
+                        pathname: 'nehemiah/property-files/' + analyzerEditingId + '/' + file.name,
+                        ct: file.type || 'application/octet-stream',
+                        token: tok
+                    });
+                    const res = await fetch('/api/upload?' + qs.toString(), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/octet-stream' },
+                        body: file
+                    });
+                    if (!res.ok) {
+                        let msg = 'HTTP ' + res.status;
+                        try { const e = await res.json(); if (e.error) msg = e.error; } catch (_) {}
+                        throw new Error(msg);
+                    }
+                    const result = await res.json();
                     p.files.push({
                         id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
                         name: file.name, pathname: result.pathname, url: result.url,
@@ -8851,16 +8868,6 @@
     .status-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
     .card-town { font-size: 0.74rem; color: #64748b; }
     </style>
-
-    <!-- Browser → Vercel Blob direct upload (handles files larger than the serverless body limit) -->
-    <script type="module">
-        try {
-            const { upload } = await import('https://esm.sh/@vercel/blob@2.3.3/client');
-            window.nhBlobUpload = upload;
-        } catch (e) {
-            console.error('Blob client failed to load', e);
-        }
-    </script>
 
     <!-- GIS Detail Modal -->
     <div class="gis-detail-modal" id="gisDetailModal" onclick="if(event.target===this)closeGisDetail()">

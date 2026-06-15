@@ -1,5 +1,8 @@
-import { handleUpload } from '@vercel/blob/client';
+import { put } from '@vercel/blob';
 import crypto from 'node:crypto';
+
+// Vercel auto-parses JSON bodies; for binary uploads we read the raw stream.
+export const config = { api: { bodyParser: false } };
 
 function validToken(token) {
   const secret = process.env.NEHEMIAH_PASSWORD;
@@ -9,10 +12,10 @@ function validToken(token) {
   return token === expected;
 }
 
-// Issues short-lived client tokens so the browser can upload large files
-// (PDFs, spreadsheets, photo sets) directly to Vercel Blob, bypassing the
-// ~4.5MB serverless request-body limit. Uploads are authorized by the
-// Nehemiah login token, passed as clientPayload, and stored privately.
+// Receives a file as the raw request body and stores it privately in Vercel
+// Blob. Auth via the Nehemiah login token (?token=). Reliable path that avoids
+// the @vercel/blob/client subpath (which fails to load in the serverless
+// runtime). Note: subject to Vercel's ~4.5MB request-body limit.
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -24,24 +27,35 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const headerToken = (req.headers.authorization || '').startsWith('Bearer ')
+    ? req.headers.authorization.slice(7) : '';
+  const token = headerToken || req.query.token;
+  if (!validToken(token)) return res.status(401).json({ error: 'Unauthorized' });
+
+  const pathname = req.query.pathname;
+  if (!pathname) return res.status(400).json({ error: 'Missing pathname' });
+  const contentType = req.query.ct || req.headers['content-type'] || 'application/octet-stream';
+
   try {
-    const jsonResponse = await handleUpload({
-      request: req,
-      body: req.body,
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
-        if (!validToken(clientPayload)) {
-          throw new Error('Unauthorized upload');
-        }
-        return {
-          addRandomSuffix: true,
-          maximumSizeInBytes: 100 * 1024 * 1024, // 100 MB ceiling
-        };
-      },
-      onUploadCompleted: async () => { /* metadata is recorded client-side */ },
+    let buffer;
+    if (Buffer.isBuffer(req.body)) buffer = req.body;
+    else if (typeof req.body === 'string' && req.body.length) buffer = Buffer.from(req.body);
+    else {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      buffer = Buffer.concat(chunks);
+    }
+    if (!buffer || !buffer.length) return res.status(400).json({ error: 'Empty file' });
+
+    const result = await put(pathname, buffer, {
+      access: 'private',
+      contentType,
+      addRandomSuffix: true,
+      allowOverwrite: false,
     });
-    return res.status(200).json(jsonResponse);
+    return res.status(200).json({ pathname: result.pathname, url: result.url });
   } catch (err) {
     console.error('Upload error:', err);
-    return res.status(400).json({ error: err.message || 'Upload failed' });
+    return res.status(500).json({ error: err.message || 'Upload failed' });
   }
 }
