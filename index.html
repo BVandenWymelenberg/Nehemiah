@@ -1640,8 +1640,42 @@
         .ranked-card-title { font-weight: 700; color: #0f172a; font-size: 1.05rem; }
         .ranked-card-pct { font-weight: 800; color: #b8860b; font-size: 1.4rem; white-space: nowrap; }
         .ranked-card-bar { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin: 8px 0 10px; }
-        .ranked-card-bar-fill { height: 100%; background: linear-gradient(90deg, #fcd34d, #f59e0b, #b8860b); }
+        .ranked-card-bar-fill { height: 100%; background: linear-gradient(90deg, #fcd34d, #f59e0b, #b8860b); transition: width 0.3s ease; }
         .ranked-card-meta { font-size: 0.8rem; color: #64748b; }
+
+        /* Score tiers: <50 red, 50–74 yellow, 75+ green */
+        .ranked-card.tier-low    .ranked-card-bar-fill { background: linear-gradient(90deg, #fca5a5, #f87171); }
+        .ranked-card.tier-mid    .ranked-card-bar-fill { background: linear-gradient(90deg, #fde047, #facc15); }
+        .ranked-card.tier-high   .ranked-card-bar-fill { background: linear-gradient(90deg, #86efac, #4ade80); }
+        .ranked-card.tier-low    .ranked-card-pct { color: #dc2626; }
+        .ranked-card.tier-mid    .ranked-card-pct { color: #ca8a04; }
+        .ranked-card.tier-high   .ranked-card-pct { color: #16a34a; }
+        .ranked-card.tier-low    .ranked-card-bar { background: #fee2e2; }
+        .ranked-card.tier-mid    .ranked-card-bar { background: #fef9c3; }
+        .ranked-card.tier-high   .ranked-card-bar { background: #dcfce7; }
+
+        /* Create New button — subtle outline to sit beside Save Property */
+        .analyzer-btn.create-new { background: #fff; color: #b45309; border: 1.5px solid #f59e0b; }
+        .analyzer-btn.create-new:hover { background: #fff7ed; color: #92400e; }
+
+        /* Drag-to-reorder handle (inline grip at the start of the card header) */
+        .ranked-card-handle {
+            flex: 0 0 auto; width: 22px; height: 24px; margin: -2px 2px 0 -4px;
+            display: flex; align-items: center; justify-content: center;
+            color: #cbd5e1; cursor: grab; border-radius: 6px; transition: all 0.12s ease; touch-action: none;
+        }
+        .ranked-card-handle:hover { color: #64748b; background: #f1f5f9; }
+        .ranked-card-handle:active { cursor: grabbing; }
+        .ranked-card.dragging { opacity: 0.45; }
+        .ranked-card.drop-target { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.35); }
+        .ranked-card-head { align-items: center; }
+        .ranked-card-head .ranked-card-title { flex: 1 1 auto; }
+
+        /* Unsaved-changes confirm modal */
+        .nh-confirm { max-width: 420px; }
+        .nh-confirm h3 { margin: 0 0 8px; color: #0f172a; font-size: 1.15rem; }
+        .nh-confirm p { color: #475569; font-size: 0.92rem; line-height: 1.5; margin: 0 0 20px; }
+        .nh-confirm-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
 
         .analyzer-empty { text-align: center; padding: 30px 20px; color: #94a3b8; border: 1px dashed rgba(245,158,11,0.3); border-radius: 10px; }
 
@@ -3137,6 +3171,7 @@
                             <button class="analyzer-btn secondary" onclick="exportAllData()" title="Download a JSON backup of all agents, properties, notes &amp; file list">⬇ Export All</button>
                             <button class="analyzer-btn secondary" onclick="resetAnalyzerForm()">Clear</button>
                             <button class="analyzer-btn secondary" id="analyzerResetCriteriaBtn" onclick="resetAnalyzerCriteriaToDefault()">Reset Criteria</button>
+                            <button class="analyzer-btn create-new" onclick="createNewProperty()" title="Start a fresh property — you'll be prompted to save current work first">✚ Create New</button>
                             <button class="analyzer-btn" onclick="saveAnalyzedProperty()">💾 Save Property</button>
                         </div>
                     </div>
@@ -8065,6 +8100,50 @@
         let analyzerTemplate = null; // user-customized default criteria (persists)
         let analyzerSort = (function() { try { return localStorage.getItem('nehemiah-analyzer-sort') || 'weight'; } catch (e) { return 'weight'; } })();
 
+        // Snapshot of the form's saved/clean state, used to detect unsaved work before "Create New".
+        let analyzerCleanSnapshot = '';
+        function analyzerFormSnapshot() {
+            const val = id => (document.getElementById(id)?.value || '');
+            return JSON.stringify({
+                editing: analyzerEditingId,
+                name: val('analyzerPropName'), town: val('analyzerPropTown'), status: val('analyzerPropStatus'),
+                price: val('analyzerPropPrice'), acreage: val('analyzerPropAcreage'), rooms: val('analyzerPropRooms'),
+                url: val('analyzerPropUrl'), notes: val('analyzerNotes'),
+                criteria: analyzerCriteria.map(c => ({ id: c.id, label: c.label, weight: normalizeWeight(c.weight) })),
+                scores: analyzerScores
+            });
+        }
+        function markAnalyzerClean() { analyzerCleanSnapshot = analyzerFormSnapshot(); }
+        function analyzerHasUnsavedData() {
+            // A brand-new untouched form (no name, all scores 0) is never "dirty".
+            const name = (document.getElementById('analyzerPropName')?.value || '').trim();
+            const anyScore = Object.values(analyzerScores).some(v => Number(v) > 0);
+            if (analyzerEditingId === null && !name && !anyScore) return false;
+            return analyzerFormSnapshot() !== analyzerCleanSnapshot;
+        }
+
+        // ===== Create New (with save-first prompt) =====
+        function createNewProperty() {
+            if (analyzerHasUnsavedData()) {
+                document.getElementById('analyzerConfirmOverlay').classList.add('active');
+            } else {
+                resetAnalyzerForm();
+            }
+        }
+        function closeAnalyzerConfirm() {
+            document.getElementById('analyzerConfirmOverlay').classList.remove('active');
+        }
+        function analyzerConfirmDiscard() {
+            closeAnalyzerConfirm();
+            resetAnalyzerForm();
+        }
+        async function analyzerConfirmSave() {
+            const ok = await saveAnalyzedProperty();
+            if (!ok) return; // e.g. missing name — keep the modal open so nothing is lost
+            closeAnalyzerConfirm();
+            resetAnalyzerForm();
+        }
+
         function setAnalyzerSort(mode) {
             if (!['weight', 'score', 'custom'].includes(mode)) return;
             analyzerSort = mode;
@@ -8157,6 +8236,8 @@
             } else if (analyzerTemplate) {
                 localStorage.setItem('nehemiah-analyzer-template', JSON.stringify(analyzerTemplate));
             }
+            // Ensure every property has a stable `order` (defaults to highest-score-first).
+            normalizeRankedOrder();
             renderRankedProperties();
         }
 
@@ -8375,6 +8456,8 @@
             renderAnalyzerCriteria();
             renderAnalyzerFiles();
             switchAnalyzerPanel('score');
+            updateAnalyzerLiveScore();
+            markAnalyzerClean();
         }
 
         async function saveAnalyzedProperty() {
@@ -8383,16 +8466,18 @@
             if (!name) {
                 alert('Enter a property description first.');
                 nameEl.focus();
-                return;
+                return false;
             }
             if (!analyzerCriteria.length) {
                 alert('Add at least one criterion before saving.');
-                return;
+                return false;
             }
             const now = Date.now();
             const id = analyzerEditingId || ('p_' + now + '_' + Math.random().toString(36).slice(2, 7));
             const existing = rankedProperties[id] || {};
+            const isNew = !rankedProperties[id];
             const town = parseTownValue((document.getElementById('analyzerPropTown').value || '').trim());
+            const percent = computeAnalyzerPercent();
             rankedProperties[id] = {
                 id,
                 name,
@@ -8407,16 +8492,22 @@
                 files: existing.files || [],
                 criteria: analyzerCriteria.map(c => ({ ...c, weight: normalizeWeight(c.weight) })),
                 scores: { ...analyzerScores },
-                percent: computeAnalyzerPercent(),
+                percent: percent,
+                order: existing.order,
                 createdAt: existing.createdAt || now,
                 updatedAt: now
             };
+            // New property: smart-insert by score so high scorers land near the top by default,
+            // while existing manual order is preserved. Editing keeps the property in place.
+            if (isNew) insertRankedByPercent(id);
             // Keep edit mode so notes & files can now be attached to this id.
             analyzerEditingId = id;
+            markAnalyzerClean();
             await saveRankedPropertiesToStorage();
             renderRankedProperties();
             document.getElementById('analyzerCardTitle').textContent = 'Editing: ' + name;
             renderAnalyzerFiles();
+            return true;
         }
 
         function openRankedProperty(id) {
@@ -8441,6 +8532,8 @@
             renderAnalyzerCriteria();
             renderAnalyzerFiles();
             switchAnalyzerPanel('score');
+            updateAnalyzerLiveScore();
+            markAnalyzerClean();
             window.scrollTo({ top: document.getElementById('analyzerTab').offsetTop, behavior: 'smooth' });
         }
 
@@ -8455,11 +8548,51 @@
             renderRankedProperties();
         }
 
+        // Score tier for the ranked bars: <50 light red, 50–74 yellow, 75+ green.
+        function rankedTier(pct) {
+            if (pct >= 75) return 'tier-high';
+            if (pct >= 50) return 'tier-mid';
+            return 'tier-low';
+        }
+
+        // Return ranked properties in display order. Anything without an `order`
+        // is placed by score (highest first) so the default is highest-at-top.
+        function getOrderedRanked() {
+            const list = Object.values(rankedProperties);
+            const hasOrder = list.some(p => typeof p.order === 'number');
+            if (!hasOrder) {
+                return list.sort((a, b) => (b.percent || 0) - (a.percent || 0) || (b.updatedAt || 0) - (a.updatedAt || 0));
+            }
+            return list.sort((a, b) => {
+                const ao = typeof a.order === 'number' ? a.order : Infinity;
+                const bo = typeof b.order === 'number' ? b.order : Infinity;
+                if (ao !== bo) return ao - bo;
+                return (b.percent || 0) - (a.percent || 0);
+            });
+        }
+
+        // Renumber order to a clean 0..n-1 sequence following the current display order.
+        function normalizeRankedOrder() {
+            getOrderedRanked().forEach((p, i) => { p.order = i; });
+        }
+
+        // Insert a (new) property into the ordered list at the spot matching its score.
+        function insertRankedByPercent(id) {
+            const target = rankedProperties[id];
+            if (!target) return;
+            const others = getOrderedRanked().filter(p => p.id !== id);
+            const pct = target.percent || 0;
+            let idx = others.findIndex(p => (p.percent || 0) < pct);
+            if (idx === -1) idx = others.length;
+            others.splice(idx, 0, target);
+            others.forEach((p, i) => { p.order = i; });
+        }
+
         function renderRankedProperties() {
             const empty = document.getElementById('rankedPropsEmpty');
             const grid = document.getElementById('rankedPropsGrid');
             if (!empty || !grid) return;
-            const items = Object.values(rankedProperties).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            const items = getOrderedRanked();
             if (items.length === 0) {
                 empty.style.display = 'block';
                 grid.innerHTML = '';
@@ -8468,6 +8601,7 @@
             empty.style.display = 'none';
             grid.innerHTML = items.map(p => {
                 const pct = typeof p.percent === 'number' ? p.percent : 0;
+                const tier = rankedTier(pct);
                 const updated = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : '';
                 const critCount = (p.criteria || []).length;
                 const fileCount = (p.files || []).length;
@@ -8476,8 +8610,19 @@
                 const fileChip = fileCount ? `<span class="card-town">📎 ${fileCount}</span>` : '';
                 const badges = (statusBadge || townLine || fileChip) ? `<div class="ranked-card-badges">${statusBadge}${townLine}${fileChip}</div>` : '';
                 return `
-                    <div class="ranked-card" onclick="openRankedProperty('${p.id}')">
+                    <div class="ranked-card ${tier}" data-id="${p.id}" draggable="true"
+                         onclick="openRankedProperty('${p.id}')"
+                         ondragstart="rankedDragStart(event, '${p.id}')" ondragend="rankedDragEnd(event)"
+                         ondragover="rankedDragOver(event, '${p.id}')" ondragleave="rankedDragLeave(event)"
+                         ondrop="rankedDrop(event, '${p.id}')">
                         <div class="ranked-card-head">
+                            <div class="ranked-card-handle" title="Drag to reorder" onclick="event.stopPropagation()">
+                                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                    <circle cx="5" cy="3" r="1.4"/><circle cx="11" cy="3" r="1.4"/>
+                                    <circle cx="5" cy="8" r="1.4"/><circle cx="11" cy="8" r="1.4"/>
+                                    <circle cx="5" cy="13" r="1.4"/><circle cx="11" cy="13" r="1.4"/>
+                                </svg>
+                            </div>
                             <div class="ranked-card-title">${escapeHtml(p.name)}</div>
                             <div class="ranked-card-pct">${pct}%</div>
                         </div>
@@ -8490,6 +8635,52 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // ===== Drag-to-reorder ranked properties =====
+        let _rankedDragId = null;
+        function rankedDragStart(ev, id) {
+            // Only start a reorder when the drag began on the grip handle —
+            // dragging the card body should do nothing (clicks open the property).
+            if (!ev.target.closest || !ev.target.closest('.ranked-card-handle')) { ev.preventDefault(); return; }
+            _rankedDragId = id;
+            ev.dataTransfer.effectAllowed = 'move';
+            try { ev.dataTransfer.setData('text/plain', id); } catch (e) {}
+            const card = ev.currentTarget;
+            requestAnimationFrame(() => card.classList.add('dragging'));
+        }
+        function rankedDragEnd(ev) {
+            _rankedDragId = null;
+            document.querySelectorAll('.ranked-card.dragging').forEach(c => c.classList.remove('dragging'));
+            document.querySelectorAll('.ranked-card.drop-target').forEach(c => c.classList.remove('drop-target'));
+        }
+        function rankedDragOver(ev, id) {
+            if (!_rankedDragId || id === _rankedDragId) return;
+            ev.preventDefault();
+            ev.dataTransfer.dropEffect = 'move';
+            ev.currentTarget.classList.add('drop-target');
+        }
+        function rankedDragLeave(ev) {
+            ev.currentTarget.classList.remove('drop-target');
+        }
+        async function rankedDrop(ev, targetId) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const dragId = _rankedDragId;
+            document.querySelectorAll('.ranked-card.drop-target').forEach(c => c.classList.remove('drop-target'));
+            if (!dragId || dragId === targetId) return;
+            const ordered = getOrderedRanked();
+            const from = ordered.findIndex(p => p.id === dragId);
+            const to = ordered.findIndex(p => p.id === targetId);
+            if (from === -1 || to === -1) return;
+            const [moved] = ordered.splice(from, 1);
+            // After removing the dragged item, `to` is the target's new index.
+            // Re-inserting there lands before the target when moving up, after it when moving down.
+            ordered.splice(to, 0, moved);
+            ordered.forEach((p, i) => { p.order = i; });
+            _rankedDragId = null;
+            await saveRankedPropertiesToStorage();
+            renderRankedProperties();
         }
 
         function escapeHtml(s) {
@@ -8875,12 +9066,26 @@
                 analyzerCriteria.forEach(c => { analyzerScores[c.id] = 0; });
                 renderAnalyzerCriteria();
             }
+            markAnalyzerClean();
         });
     </script>
 
     <!-- Agent / contact modal -->
     <div class="nh-modal-overlay" id="agentModalOverlay" onclick="if(event.target===this)closeAgentModal()">
         <div class="nh-modal" id="agentModalBody"></div>
+    </div>
+
+    <!-- Unsaved-changes confirm (Create New) -->
+    <div class="nh-modal-overlay" id="analyzerConfirmOverlay" onclick="if(event.target===this)closeAnalyzerConfirm()">
+        <div class="nh-modal nh-confirm">
+            <h3>Save existing data before continuing?</h3>
+            <p>You have unsaved work on this property. Save it before starting a new one so you don't lose anything.</p>
+            <div class="nh-confirm-actions">
+                <button class="analyzer-btn secondary" onclick="closeAnalyzerConfirm()">Cancel</button>
+                <button class="analyzer-btn danger" onclick="analyzerConfirmDiscard()">Discard &amp; Continue</button>
+                <button class="analyzer-btn" onclick="analyzerConfirmSave()">💾 Save &amp; Continue</button>
+            </div>
+        </div>
     </div>
 
     <!-- Town datalist for the property analyzer -->
