@@ -1,9 +1,13 @@
 import { put, get } from '@vercel/blob';
 import { Readable } from 'node:stream';
 
-const BLOB_PATH = 'nehemiah/favorites.json';
-
+// Serves both /api/favorites and /api/resort-favorites (the latter is rewritten
+// to /api/favorites?kind=resort) so the app stays under Vercel's function cap.
 export default async function handler(req, res) {
+  const BLOB_PATH = req.query && req.query.kind === 'resort'
+    ? 'nehemiah/resort-favorites.json'
+    : 'nehemiah/favorites.json';
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
