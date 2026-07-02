@@ -8789,32 +8789,54 @@
         function nhBriefPdfDoc(p, data){
             var loc = [p.townName, p.townState].filter(Boolean).join(', ');
             var date = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-            var prov = data.compsSource === 'uploaded' ? 'Comps from uploaded documents'
-                     : 'Comps pulled from web · last 24 months';
+            var prov = data.compsSource === 'uploaded' ? '📎 Comps from uploaded documents'
+                     : '🌐 Comps pulled from web · last 24 months';
+            var pct = (typeof p.percent==='number') ? p.percent : 0;
+            var gr = (typeof nhGrade==='function') ? nhGrade(pct) : { g:'', c:'#d4a017' };
+            var tier = (typeof nhTier==='function') ? nhTier(pct) : '';
             var body = nhRenderMarkdown(data.summary) + nhBriefSourcesHtml(data.sources);
+            var chip = function(k,v){ return '<div class="chip"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; };
+            var facts = chip('Asking', p.askingPrice?('$'+nhEsc(p.askingPrice)):'—') +
+                        chip('Acreage', p.acreage?nhEsc(p.acreage):'—') +
+                        chip('Rooms / Keys', p.rooms?nhEsc(p.rooms):'—') +
+                        chip('Stage', p.status?nhEsc(p.status):'—');
+            var LOGO = '<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><path d="M30 2L54 12V32C54 44 43 54 30 58C17 54 6 44 6 32V12L30 2Z" stroke="#d4a017" stroke-width="2" fill="none"/><rect x="28" y="12" width="4" height="32" fill="#d4a017"/><rect x="20" y="38" width="20" height="3" rx="1" fill="#d4a017"/><rect x="28" y="44" width="4" height="8" fill="#d4a017"/><circle cx="30" cy="54" r="2.5" fill="#d4a017"/><path d="M28 12L30 6L32 12H28Z" fill="#d4a017"/></svg>';
+            // Everything is paper-agnostic (no fixed widths) and flows, so it paginates
+            // cleanly to 8.5x11 in headless Chrome AND any browser's "Save as PDF".
             var css = '*{box-sizing:border-box;margin:0;padding:0}'+
               'body{font-family:Inter,system-ui,Arial,sans-serif;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;line-height:1.6}'+
-              '.hd{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:2px solid #d4a017;margin-bottom:18px}'+
-              '.bd{font-weight:800;letter-spacing:.2em;color:#0f172a}.dt{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}'+
-              'h1{font-size:22px;font-weight:800;color:#0f172a;margin-bottom:2px}.loc{color:#64748b;font-size:12px;margin-bottom:8px}'+
-              '.prov{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;color:#8b6914;background:#faf6ee;border:1px solid #e7d9b8;padding:5px 10px;border-radius:14px;margin-bottom:16px}'+
-              '.nhab-h{font-weight:800;color:#0f172a}h2.nhab-h,.nhab-h2{font-size:14px;color:#8b6914;border-bottom:1px solid #f0e6cc;padding-bottom:4px;margin:18px 0 7px;break-after:avoid}'+
+              '.mast{position:relative;color:#fff;border-radius:14px;padding:22px 24px;margin-bottom:18px;overflow:hidden;background:radial-gradient(600px 240px at 82% -20%,rgba(212,160,23,.18),transparent 60%),linear-gradient(160deg,#0b1220,#0f172a 55%,#111c33);break-inside:avoid}'+
+              '.mast .brow{display:flex;align-items:center;gap:9px}.mast .brow svg{width:22px;height:22px}.mast .wm{font-weight:800;letter-spacing:.22em;font-size:12px;text-transform:uppercase}'+
+              '.mast .kick{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#d4a017;font-weight:700;margin-top:12px}'+
+              '.mast h1{font-size:23px;font-weight:800;margin:3px 0 2px;max-width:74%;line-height:1.1}.mast .loc{color:#cbd5e1;font-size:12px;font-weight:300}'+
+              '.mast .prov{display:inline-block;font-size:8.5px;font-weight:700;letter-spacing:.03em;color:#f3d78a;background:rgba(212,160,23,.14);border:1px solid rgba(212,160,23,.4);padding:5px 10px;border-radius:14px;margin-top:12px}'+
+              '.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:8px 13px;min-width:96px}'+
+              '.chip .k{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:#d4a017}.chip .v{font-size:12.5px;font-weight:700;margin-top:3px}'+
+              '.seal{position:absolute;top:20px;right:22px;width:74px;height:74px;border-radius:50%;background:conic-gradient(#d4a017 0turn '+(pct/100)+'turn,rgba(255,255,255,.16) '+(pct/100)+'turn 1turn);display:flex;align-items:center;justify-content:center}'+
+              '.seal .in{width:60px;height:60px;border-radius:50%;background:#0b1220;display:flex;flex-direction:column;align-items:center;justify-content:center}'+
+              '.seal .g{font-size:17px;font-weight:800;color:#d4a017;line-height:1}.seal .p{font-size:10px;font-weight:700}.seal .l{font-size:5.5px;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-top:1px}'+
+              '.nhab-h{font-weight:800;color:#0f172a}h2.nhab-h,.nhab-h2{font-size:14px;color:#8b6914;border-bottom:1px solid #f0e6cc;padding-bottom:4px;margin:16px 0 7px;break-after:avoid}'+
               'h3.nhab-h,.nhab-h3{font-size:12px;margin:12px 0 5px}h4.nhab-h,.nhab-h4{font-size:11px;margin:10px 0 5px;color:#475569}'+
-              'p{margin:0 0 9px}ul,ol{margin:0 0 9px 20px}li{margin:0 0 4px}strong{font-weight:700;color:#0f172a}em{color:#64748b}'+
+              'p{margin:0 0 9px;orphans:3;widows:3}ul,ol{margin:0 0 9px 20px}li{margin:0 0 4px}strong{font-weight:700;color:#0f172a}em{color:#64748b}'+
               'a{color:#b8860b;text-decoration:none}code{background:#f1f5f9;padding:1px 4px;border-radius:3px}'+
               '.nhab-tablewrap{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin:6px 0 14px}'+
               'table{width:100%;border-collapse:collapse;font-size:9.5px}'+
               'th{background:#faf6ee;color:#8b6914;text-align:left;font-size:8px;letter-spacing:.04em;text-transform:uppercase;padding:7px 8px;border-bottom:1.5px solid #e7d9b8}'+
-              'td{padding:7px 8px;border-bottom:1px solid #eef2f7;vertical-align:top}tr{break-inside:avoid}'+
+              'td{padding:7px 8px;border-bottom:1px solid #eef2f7;vertical-align:top}tr{break-inside:avoid}thead{display:table-header-group}'+
               '.nhab-sources{margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0}.nhab-sources h4{font-size:9px;text-transform:uppercase;color:#64748b;margin-bottom:6px}.nhab-sources li{font-size:9px}'+
               '.nhab-note{display:none}'+
-              '@page{size:Letter;margin:0.6in 0.7in;@bottom-right{content:counter(page);font:9px Inter,sans-serif;color:#94a3b8}@bottom-left{content:"Nehemiah · Confidential";font:9px Inter,sans-serif;color:#94a3b8}}';
+              '@page{size:8.5in 11in;margin:0.55in 0.6in 0.65in;@bottom-right{content:counter(page);font:9px Inter,sans-serif;color:#94a3b8}@bottom-left{content:"Nehemiah · Confidential · '+nhEsc(date)+'";font:9px Inter,sans-serif;color:#94a3b8}}';
             return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Acquisition Brief</title>'+
               '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'+
               '<style>'+css+'</style></head><body>'+
-              '<div class="hd"><div class="bd">NEHEMIAH</div><div class="dt">'+nhEsc(date)+' · Confidential</div></div>'+
-              '<h1>'+nhEsc(p.name)+'</h1><div class="loc">'+nhEsc(loc||'')+'</div>'+
-              '<div class="prov">'+nhEsc(prov)+'</div>'+
+              '<div class="mast">'+
+                (gr.g?('<div class="seal"><div class="in"><div class="g">'+gr.g+'</div><div class="p">'+pct+'%</div><div class="l">Score</div></div></div>'):'')+
+                '<div class="brow">'+LOGO+'<span class="wm">Nehemiah</span></div>'+
+                '<div class="kick">Confidential Acquisition Brief</div>'+
+                '<h1>'+nhEsc(p.name)+'</h1><div class="loc">'+nhEsc(loc||'')+(tier?(' &middot; '+nhEsc(tier)):'')+'</div>'+
+                '<div class="prov">'+prov+'</div>'+
+                '<div class="facts">'+facts+'</div>'+
+              '</div>'+
               body + '</body></html>';
         }
 
