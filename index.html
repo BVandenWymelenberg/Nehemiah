@@ -8564,33 +8564,61 @@
             return map;
         }
 
+        // Full-screen loading overlay while the PDF is generated.
+        function nhPdfOverlay(msg){
+            var o = document.createElement('div');
+            o.id = 'nhPdfOverlay';
+            o.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Inter,system-ui,Arial,sans-serif;';
+            o.innerHTML = '<div style="width:38px;height:38px;border:3px solid rgba(212,160,23,.3);border-top-color:#d4a017;border-radius:50%;animation:nhspin 1s linear infinite;margin-bottom:16px"></div><div id="nhPdfMsg" style="font-size:15px;font-weight:500">'+msg+'</div><style>@keyframes nhspin{to{transform:rotate(360deg)}}</style>';
+            document.body.appendChild(o);
+            return o;
+        }
+        function nhFileSafe(s){ return String(s||'Executive Summary').replace(/[^\w .,&()\-]+/g,'').trim().slice(0,120) || 'Executive Summary'; }
+
         async function generateExecutiveSummary(id){
             id = id || analyzerEditingId;
             if(!id || !rankedProperties[id]){ alert('Save this property first, then click Executive Summary.'); return; }
             var p = rankedProperties[id];
-            var w = window.open('', '_blank');
-            if(!w){ alert('Please allow pop-ups for this site, then click Executive Summary again.'); return; }
-            w.document.open();
-            w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Executive Summary</title><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,system-ui,Arial,sans-serif;background:#0f172a;color:#fff}.sp{width:34px;height:34px;border:3px solid rgba(212,160,23,.3);border-top-color:#d4a017;border-radius:50%;animation:sp 1s linear infinite;margin-bottom:16px}@keyframes sp{to{transform:rotate(360deg)}}</style></head><body><div class="sp"></div><div>Generating Executive Summary…</div></body></html>');
-            w.document.close();
-            var ai = '', photoUrls = {};
+            var overlay = nhPdfOverlay('Reading documents & generating summary…');
             try {
                 var results = await Promise.all([
                     fetchExecSummary(p).catch(function(){ return ''; }),
                     nhBuildPhotoMap(p).catch(function(){ return {}; })
                 ]);
-                ai = results[0] || ''; photoUrls = results[1] || {};
-            } catch(e) { ai = ''; }
-            var html = buildExecSummaryHtml(p, ai, photoUrls);
-            // Load as a REAL document via a Blob URL (not document.write into about:blank) —
-            // Chrome's print engine only honors @page size/breaks on a genuinely-loaded document.
-            try {
-                var blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-                w.location.href = blobUrl;
-                setTimeout(function(){ try{ URL.revokeObjectURL(blobUrl); }catch(e){} }, 60000);
+                var html = buildExecSummaryHtml(p, results[0]||'', results[1]||{});
+                var msg = document.getElementById('nhPdfMsg'); if(msg) msg.textContent = 'Rendering PDF…';
+
+                var headers = { 'Content-Type':'application/json' };
+                if (typeof nehemiahToken==='string' && nehemiahToken) headers['Authorization'] = 'Bearer ' + nehemiahToken;
+                var res = await fetch('/api/render-pdf', { method:'POST', headers:headers, body: JSON.stringify({ html: html, name: p.name }) });
+
+                if (res.ok) {
+                    var blob = await res.blob();
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = nhFileSafe(p.name) + ' — Executive Summary.pdf';
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 30000);
+                } else {
+                    // Fallback: open the summary in a new tab so it can still be saved manually.
+                    var detail = ''; try { detail = (await res.json()).detail || ''; } catch(e){}
+                    nhOpenSummaryFallback(html, p.name);
+                    alert('Server PDF generation is unavailable' + (detail?(' ('+detail+')'):'') + '. Opened the summary in a new tab so you can Save as PDF from there.');
+                }
             } catch(e) {
-                w.document.open(); w.document.write(html); w.document.close();
+                alert('Could not generate the PDF: ' + (e && e.message || e));
+            } finally {
+                if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
             }
+        }
+
+        // Fallback path: load the built HTML as a real blob document in a new tab.
+        function nhOpenSummaryFallback(html, name){
+            try {
+                var url = URL.createObjectURL(new Blob([html], { type:'text/html' }));
+                window.open(url, '_blank');
+                setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 60000);
+            } catch(e) { /* ignore */ }
         }
 
         // Calls the server AI endpoint; returns '' if unavailable/unconfigured so we fall back gracefully.
