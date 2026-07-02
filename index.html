@@ -8581,7 +8581,16 @@
                 ]);
                 ai = results[0] || ''; photoUrls = results[1] || {};
             } catch(e) { ai = ''; }
-            w.document.open(); w.document.write(buildExecSummaryHtml(p, ai, photoUrls)); w.document.close();
+            var html = buildExecSummaryHtml(p, ai, photoUrls);
+            // Load as a REAL document via a Blob URL (not document.write into about:blank) —
+            // Chrome's print engine only honors @page size/breaks on a genuinely-loaded document.
+            try {
+                var blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+                w.location.href = blobUrl;
+                setTimeout(function(){ try{ URL.revokeObjectURL(blobUrl); }catch(e){} }, 60000);
+            } catch(e) {
+                w.document.open(); w.document.write(html); w.document.close();
+            }
         }
 
         // Calls the server AI endpoint; returns '' if unavailable/unconfigured so we fall back gracefully.
