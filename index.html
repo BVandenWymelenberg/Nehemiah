@@ -3172,7 +3172,7 @@
                             <button class="analyzer-btn secondary" onclick="resetAnalyzerForm()">Clear</button>
                             <button class="analyzer-btn secondary" id="analyzerResetCriteriaBtn" onclick="resetAnalyzerCriteriaToDefault()">Reset Criteria</button>
                             <button class="analyzer-btn create-new" onclick="createNewProperty()" title="Start a fresh property — you'll be prompted to save current work first">✚ Create New</button>
-                            <button class="analyzer-btn secondary" onclick="generateExecutiveSummary()" title="Generate a branded, printable Executive Summary of this property">📄 Executive Summary</button>
+                            <button class="analyzer-btn secondary" onclick="openAcquisitionBrief()" title="Generate a deep, institutional-grade acquisition brief with market analysis &amp; comparable sales">📄 Executive Summary</button>
                             <button class="analyzer-btn" onclick="saveAnalyzedProperty()">💾 Save Property</button>
                         </div>
                     </div>
@@ -8574,6 +8574,306 @@
             return o;
         }
         function nhFileSafe(s){ return String(s||'Executive Summary').replace(/[^\w .,&()\-]+/g,'').trim().slice(0,120) || 'Executive Summary'; }
+
+        /* ===================== Acquisition Brief (institutional-grade, in-app panel) ===================== */
+
+        // Inject the panel stylesheet once.
+        function nhBriefEnsureStyle(){
+            if (document.getElementById('nhab-style')) return;
+            var st = document.createElement('style');
+            st.id = 'nhab-style';
+            st.textContent =
+              '@keyframes nhabspin{to{transform:rotate(360deg)}}'+
+              '.nhab-ov{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px;font-family:Inter,system-ui,Arial,sans-serif}'+
+              '.nhab-modal{background:#fff;width:min(880px,100%);max-height:92vh;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden}'+
+              '.nhab-head{padding:20px 26px 16px;background:linear-gradient(160deg,#0b1220,#0f172a 55%,#111c33);color:#fff;position:relative}'+
+              '.nhab-eb{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:#d4a017;font-weight:700}'+
+              '.nhab-title{font-size:1.5rem;font-weight:800;margin:5px 0 2px;line-height:1.15}'+
+              '.nhab-loc{font-size:.86rem;color:#cbd5e1;font-weight:300}'+
+              '.nhab-prov{display:none;align-items:center;gap:6px;margin-top:12px;font-size:.66rem;font-weight:600;letter-spacing:.04em;padding:6px 11px;border-radius:20px}'+
+              '.nhab-prov.up{background:rgba(212,160,23,.16);color:#f3d78a;border:1px solid rgba(212,160,23,.4)}'+
+              '.nhab-prov.web{background:rgba(56,189,248,.14);color:#bae6fd;border:1px solid rgba(56,189,248,.35)}'+
+              '.nhab-x{position:absolute;top:16px;right:16px;width:32px;height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-size:18px;cursor:pointer;line-height:1}'+
+              '.nhab-x:hover{background:rgba(255,255,255,.24)}'+
+              '.nhab-body{padding:24px 30px;overflow-y:auto;color:#1e293b;font-size:.93rem;line-height:1.62}'+
+              '.nhab-body .nhab-h{font-weight:800;color:#0f172a;line-height:1.2}'+
+              '.nhab-body h2.nhab-h,.nhab-body .nhab-h2{font-size:1.12rem;margin:26px 0 8px;padding-bottom:6px;border-bottom:2px solid #f0e6cc;color:#8b6914}'+
+              '.nhab-body h1.nhab-h,.nhab-body .nhab-h1{font-size:1.28rem;margin:20px 0 8px}'+
+              '.nhab-body h3.nhab-h,.nhab-body .nhab-h3{font-size:1rem;margin:18px 0 6px;color:#334155}'+
+              '.nhab-body h4.nhab-h,.nhab-body .nhab-h4{font-size:.9rem;margin:14px 0 6px;color:#475569}'+
+              '.nhab-body p{margin:0 0 12px}'+
+              '.nhab-body ul,.nhab-body ol{margin:0 0 12px 22px}'+
+              '.nhab-body li{margin:0 0 6px}'+
+              '.nhab-body strong{color:#0f172a;font-weight:700}'+
+              '.nhab-body em{font-style:italic;color:#64748b}'+
+              '.nhab-body code{background:#f1f5f9;border-radius:4px;padding:1px 5px;font-size:.85em}'+
+              '.nhab-body a{color:#b8860b;text-decoration:none;border-bottom:1px solid rgba(184,134,11,.35)}'+
+              '.nhab-body hr{border:0;border-top:1px solid #e2e8f0;margin:18px 0}'+
+              '.nhab-tablewrap{overflow-x:auto;margin:6px 0 16px;border:1px solid #e2e8f0;border-radius:10px}'+
+              '.nhab-table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:560px}'+
+              '.nhab-table th{background:#faf6ee;color:#8b6914;text-align:left;font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;padding:9px 11px;border-bottom:2px solid #e7d9b8;white-space:nowrap}'+
+              '.nhab-table td{padding:9px 11px;border-bottom:1px solid #eef2f7;vertical-align:top}'+
+              '.nhab-table tr:last-child td{border-bottom:0}'+
+              '.nhab-table tr:nth-child(even) td{background:#fcfbf7}'+
+              '.nhab-sources{margin-top:20px;padding-top:14px;border-top:1px solid #e2e8f0}'+
+              '.nhab-sources h4{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:8px}'+
+              '.nhab-sources ol{margin-left:20px}.nhab-sources li{font-size:.8rem;margin-bottom:5px}'+
+              '.nhab-load{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#64748b}'+
+              '.nhab-spin{width:38px;height:38px;border:3px solid rgba(212,160,23,.25);border-top-color:#d4a017;border-radius:50%;animation:nhabspin 1s linear infinite;margin-bottom:16px}'+
+              '.nhab-load .sub{font-size:.8rem;color:#94a3b8;margin-top:6px;text-align:center;max-width:340px}'+
+              '.nhab-error{padding:40px 20px;text-align:center;color:#b91c1c;font-weight:600}'+
+              '.nhab-error span{display:block;margin-top:8px;font-weight:400;font-size:.82rem;color:#64748b}'+
+              '.nhab-note{margin-top:16px;font-size:.76rem;color:#94a3b8;font-style:italic}'+
+              '.nhab-foot{padding:14px 24px;border-top:1px solid #e2e8f0;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;background:#fbfbfd}'+
+              '.nhab-foot button{font:600 13px Inter,system-ui,sans-serif;padding:9px 16px;border-radius:8px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155}'+
+              '.nhab-foot button:hover{background:#f8fafc}'+
+              '.nhab-foot button.primary{border:0;color:#fff;background:linear-gradient(135deg,#d4a017,#8b6914)}'+
+              '.nhab-foot button:disabled{opacity:.5;cursor:default}'+
+              '@media (max-width:620px){.nhab-body{padding:18px}.nhab-title{font-size:1.25rem}}';
+            document.head.appendChild(st);
+        }
+
+        // Build + mount the modal shell (starts in loading state). Returns the overlay element.
+        function nhBriefOverlay(p){
+            var loc = [p.townName, p.townState].filter(Boolean).join(', ');
+            var ov = document.createElement('div');
+            ov.className = 'nhab-ov';
+            ov.__prop = p;
+            ov.innerHTML =
+              '<div class="nhab-modal" role="dialog" aria-modal="true">'+
+                '<div class="nhab-head">'+
+                  '<button class="nhab-x" title="Close" aria-label="Close">&times;</button>'+
+                  '<div class="nhab-eb">Acquisition Brief</div>'+
+                  '<div class="nhab-title">'+nhEsc(p.name)+'</div>'+
+                  '<div class="nhab-loc">'+(loc?nhEsc(loc):'&nbsp;')+'</div>'+
+                  '<span class="nhab-prov" id="nhabProv"></span>'+
+                '</div>'+
+                '<div class="nhab-body" id="nhabBody">'+
+                  '<div class="nhab-load"><div class="nhab-spin"></div><div>Analyzing town, market &amp; comparable sales…</div><div class="sub" id="nhabSub">Reading uploaded documents and building the brief.</div></div>'+
+                '</div>'+
+                '<div class="nhab-foot">'+
+                  '<button id="nhabCopy" disabled>Copy text</button>'+
+                  '<button id="nhabPdf" class="primary" disabled>Download PDF</button>'+
+                  '<button id="nhabClose">Close</button>'+
+                '</div>'+
+              '</div>';
+            document.body.appendChild(ov);
+            var close = function(){ if (ov.parentNode) ov.parentNode.removeChild(ov); document.removeEventListener('keydown', onKey); };
+            var onKey = function(e){ if (e.key === 'Escape') close(); };
+            document.addEventListener('keydown', onKey);
+            ov.querySelector('.nhab-x').onclick = close;
+            ov.querySelector('#nhabClose').onclick = close;
+            ov.addEventListener('mousedown', function(e){ if (e.target === ov) close(); });
+            ov.querySelector('#nhabCopy').onclick = function(){ nhBriefCopy(ov); };
+            ov.querySelector('#nhabPdf').onclick = function(){ nhBriefDownloadPdf(ov); };
+            return ov;
+        }
+
+        // Entry point wired to the "Executive Summary" button.
+        async function openAcquisitionBrief(id){
+            id = id || analyzerEditingId;
+            if (!id || !rankedProperties[id]) { alert('Save this property first, then click Executive Summary.'); return; }
+            var p = rankedProperties[id];
+            nhBriefEnsureStyle();
+            var ov = nhBriefOverlay(p);
+            var bodyEl = ov.querySelector('#nhabBody');
+            try {
+                var data = await nhBriefFetch(p);
+                if (!data || !data.summary) {
+                    bodyEl.innerHTML = nhBriefFallbackHtml(p, (data && data.reason) || '');
+                    return;
+                }
+                ov.__briefData = data;
+                nhBriefSetProvenance(ov, data);
+                bodyEl.innerHTML = nhRenderMarkdown(data.summary) + nhBriefSourcesHtml(data.sources) +
+                    '<div class="nhab-note">AI-generated from your property data'+(data.compsSource==='uploaded'?' and uploaded comps':' and live web search')+'. Verify figures against source records before committing.</div>';
+                bodyEl.scrollTop = 0;
+                var cp = ov.querySelector('#nhabCopy'); if (cp) cp.disabled = false;
+                var pd = ov.querySelector('#nhabPdf'); if (pd) pd.disabled = false;
+            } catch (e) {
+                bodyEl.innerHTML = '<div class="nhab-error">Could not generate the brief.<span>'+nhEsc((e && e.message) || e)+'</span></div>';
+            }
+        }
+
+        // POST the property id to the AI endpoint; returns the parsed response.
+        async function nhBriefFetch(p){
+            var headers = { 'Content-Type':'application/json' };
+            if (typeof nehemiahToken==='string' && nehemiahToken) headers['Authorization'] = 'Bearer ' + nehemiahToken;
+            var res = await fetch('/api/exec-summary', { method:'POST', headers:headers, body: JSON.stringify({ id: p.id }) });
+            if (!res.ok) {
+                if (res.status === 401) throw new Error('Session expired — please log in again.');
+                throw new Error('The summary service returned an error (' + res.status + ').');
+            }
+            return await res.json().catch(function(){ return {}; });
+        }
+
+        function nhBriefSetProvenance(ov, data){
+            var badge = ov.querySelector('#nhabProv');
+            if (!badge || !data || !data.compsSource) { if (badge) badge.style.display='none'; return; }
+            if (data.compsSource === 'uploaded') {
+                badge.className = 'nhab-prov up';
+                var n = (data.compFiles && data.compFiles.length) || 0;
+                badge.innerHTML = '📎 Comps from uploaded documents' + (n ? (' · ' + n + ' file' + (n===1?'':'s')) : '');
+            } else {
+                badge.className = 'nhab-prov web';
+                badge.innerHTML = '🌐 Comps pulled from web · last 24 months';
+            }
+            badge.style.display = 'inline-flex';
+        }
+
+        function nhBriefSourcesHtml(sources){
+            if (!sources || !sources.length) return '';
+            return '<div class="nhab-sources"><h4>Web sources</h4><ol>' +
+                sources.map(function(s){ return '<li><a href="'+nhEsc(s.url)+'" target="_blank" rel="noopener">'+nhEsc(s.title||s.url)+'</a></li>'; }).join('') +
+                '</ol></div>';
+        }
+
+        // Graceful fallback panel when the AI endpoint isn't configured / returned nothing.
+        function nhBriefFallbackHtml(p, reason){
+            var pct = (typeof p.percent==='number') ? p.percent : 0;
+            var gr = nhGrade(pct), tier = nhTier(pct);
+            var all = Object.values(rankedProperties).slice().sort(function(a,b){return (b.percent||0)-(a.percent||0);});
+            var rank = all.findIndex(function(x){return x.id===p.id;})+1;
+            var auto = nhAutoSummary(p, pct, gr, tier, rank, all.length, (p.criteria||[]));
+            var why = reason === 'no_key'
+                ? 'The AI brief is unavailable because <code>ANTHROPIC_API_KEY</code> is not set in Vercel. Add it to enable market analysis and comparable sales.'
+                : (reason === 'no_data' ? 'Property data has not synced to the server yet — save the property and try again.'
+                : 'The AI brief could not be generated right now. Showing a data-driven snapshot instead.');
+            return '<div class="nhab-h nhab-h2">Snapshot</div><p>'+auto+'</p><div class="nhab-note">'+why+'</div>';
+        }
+
+        function nhBriefCopy(ov){
+            var data = ov.__briefData;
+            if (!data || !data.summary) return;
+            var btn = ov.querySelector('#nhabCopy');
+            var done = function(){ if (btn){ var o=btn.textContent; btn.textContent='Copied ✓'; setTimeout(function(){ btn.textContent=o; }, 1600); } };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(data.summary).then(done, function(){});
+            } else {
+                var ta = document.createElement('textarea'); ta.value = data.summary; document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); done(); } catch(e){}
+                ta.remove();
+            }
+        }
+
+        // Export the brief to a clean, branded PDF via the existing render-pdf endpoint.
+        async function nhBriefDownloadPdf(ov){
+            var data = ov.__briefData, p = ov.__prop;
+            if (!data || !data.summary) { alert('Nothing to export yet.'); return; }
+            var btn = ov.querySelector('#nhabPdf'); var orig = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = 'Rendering…'; }
+            try {
+                var html = nhBriefPdfDoc(p, data);
+                var headers = { 'Content-Type':'application/json' };
+                if (typeof nehemiahToken==='string' && nehemiahToken) headers['Authorization'] = 'Bearer ' + nehemiahToken;
+                var res = await fetch('/api/render-pdf', { method:'POST', headers:headers, body: JSON.stringify({ html: html, name: p.name }) });
+                if (res.ok) {
+                    var blob = await res.blob();
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = nhFileSafe(p.name) + ' — Acquisition Brief.pdf';
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 30000);
+                } else {
+                    nhOpenSummaryFallback(html, p.name);
+                    alert('Server PDF generation is unavailable. Opened the brief in a new tab so you can Save as PDF from there.');
+                }
+            } catch (e) {
+                alert('Could not generate the PDF: ' + ((e && e.message) || e));
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = orig; }
+            }
+        }
+
+        // Branded, Letter-format print document wrapping the rendered brief.
+        function nhBriefPdfDoc(p, data){
+            var loc = [p.townName, p.townState].filter(Boolean).join(', ');
+            var date = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+            var prov = data.compsSource === 'uploaded' ? 'Comps from uploaded documents'
+                     : 'Comps pulled from web · last 24 months';
+            var body = nhRenderMarkdown(data.summary) + nhBriefSourcesHtml(data.sources);
+            var css = '*{box-sizing:border-box;margin:0;padding:0}'+
+              'body{font-family:Inter,system-ui,Arial,sans-serif;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;line-height:1.6}'+
+              '.hd{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:2px solid #d4a017;margin-bottom:18px}'+
+              '.bd{font-weight:800;letter-spacing:.2em;color:#0f172a}.dt{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}'+
+              'h1{font-size:22px;font-weight:800;color:#0f172a;margin-bottom:2px}.loc{color:#64748b;font-size:12px;margin-bottom:8px}'+
+              '.prov{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;color:#8b6914;background:#faf6ee;border:1px solid #e7d9b8;padding:5px 10px;border-radius:14px;margin-bottom:16px}'+
+              '.nhab-h{font-weight:800;color:#0f172a}h2.nhab-h,.nhab-h2{font-size:14px;color:#8b6914;border-bottom:1px solid #f0e6cc;padding-bottom:4px;margin:18px 0 7px;break-after:avoid}'+
+              'h3.nhab-h,.nhab-h3{font-size:12px;margin:12px 0 5px}h4.nhab-h,.nhab-h4{font-size:11px;margin:10px 0 5px;color:#475569}'+
+              'p{margin:0 0 9px}ul,ol{margin:0 0 9px 20px}li{margin:0 0 4px}strong{font-weight:700;color:#0f172a}em{color:#64748b}'+
+              'a{color:#b8860b;text-decoration:none}code{background:#f1f5f9;padding:1px 4px;border-radius:3px}'+
+              '.nhab-tablewrap{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin:6px 0 14px}'+
+              'table{width:100%;border-collapse:collapse;font-size:9.5px}'+
+              'th{background:#faf6ee;color:#8b6914;text-align:left;font-size:8px;letter-spacing:.04em;text-transform:uppercase;padding:7px 8px;border-bottom:1.5px solid #e7d9b8}'+
+              'td{padding:7px 8px;border-bottom:1px solid #eef2f7;vertical-align:top}tr{break-inside:avoid}'+
+              '.nhab-sources{margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0}.nhab-sources h4{font-size:9px;text-transform:uppercase;color:#64748b;margin-bottom:6px}.nhab-sources li{font-size:9px}'+
+              '.nhab-note{display:none}'+
+              '@page{size:Letter;margin:0.6in 0.7in;@bottom-right{content:counter(page);font:9px Inter,sans-serif;color:#94a3b8}@bottom-left{content:"Nehemiah · Confidential";font:9px Inter,sans-serif;color:#94a3b8}}';
+            return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Acquisition Brief</title>'+
+              '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'+
+              '<style>'+css+'</style></head><body>'+
+              '<div class="hd"><div class="bd">NEHEMIAH</div><div class="dt">'+nhEsc(date)+' · Confidential</div></div>'+
+              '<h1>'+nhEsc(p.name)+'</h1><div class="loc">'+nhEsc(loc||'')+'</div>'+
+              '<div class="prov">'+nhEsc(prov)+'</div>'+
+              body + '</body></html>';
+        }
+
+        /* Minimal GitHub-flavored-Markdown -> HTML for the brief (headings, tables, lists, inline). */
+        function nhMdInline(s){
+            s = nhEsc(s);
+            s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+            s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+            s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+            return s;
+        }
+        function nhMdSplitRow(t){
+            return t.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(function(c){ return c.trim(); });
+        }
+        function nhRenderMarkdown(md){
+            var lines = String(md||'').replace(/\r\n/g,'\n').split('\n');
+            var html = '', i = 0, listBuf = null;
+            function flushList(){
+                if (!listBuf) return;
+                html += '<'+listBuf.type+'>' + listBuf.items.map(function(x){ return '<li>'+nhMdInline(x)+'</li>'; }).join('') + '</'+listBuf.type+'>';
+                listBuf = null;
+            }
+            while (i < lines.length) {
+                var t = lines[i].trim();
+                // GFM table: a "| ... |" row followed by a "|---|---|" separator row
+                if (/^\|.*\|/.test(t) && i+1 < lines.length && /^\|?[\s:|-]+\|/.test(lines[i+1].trim()) && /-/.test(lines[i+1])) {
+                    flushList();
+                    var header = nhMdSplitRow(t);
+                    i += 2;
+                    var rows = [];
+                    while (i < lines.length && /^\s*\|.*\|/.test(lines[i])) { rows.push(nhMdSplitRow(lines[i].trim())); i++; }
+                    html += '<div class="nhab-tablewrap"><table class="nhab-table"><thead><tr>' +
+                        header.map(function(h){ return '<th>'+nhMdInline(h)+'</th>'; }).join('') +
+                        '</tr></thead><tbody>' +
+                        rows.map(function(r){ return '<tr>' + r.map(function(c){ return '<td>'+nhMdInline(c)+'</td>'; }).join('') + '</tr>'; }).join('') +
+                        '</tbody></table></div>';
+                    continue;
+                }
+                var hm = /^(#{1,4})\s+(.*)$/.exec(t);
+                if (hm) { flushList(); var lvl = hm[1].length; html += '<div class="nhab-h nhab-h'+lvl+'">'+nhMdInline(hm[2])+'</div>'; i++; continue; }
+                if (/^([-*_])\1{2,}$/.test(t)) { flushList(); html += '<hr>'; i++; continue; }
+                var um = /^[-*]\s+(.*)$/.exec(t);
+                var om = /^\d+[.)]\s+(.*)$/.exec(t);
+                if (um) { if (!listBuf || listBuf.type!=='ul') { flushList(); listBuf={type:'ul',items:[]}; } listBuf.items.push(um[1]); i++; continue; }
+                if (om) { if (!listBuf || listBuf.type!=='ol') { flushList(); listBuf={type:'ol',items:[]}; } listBuf.items.push(om[1]); i++; continue; }
+                if (!t) { flushList(); i++; continue; }
+                flushList();
+                var para = [t]; i++;
+                while (i < lines.length) {
+                    var n = lines[i].trim();
+                    if (!n || /^\|.*\|/.test(n) || /^#{1,4}\s/.test(n) || /^[-*]\s/.test(n) || /^\d+[.)]\s/.test(n) || /^([-*_])\1{2,}$/.test(n)) break;
+                    para.push(n); i++;
+                }
+                html += '<p>'+nhMdInline(para.join(' '))+'</p>';
+            }
+            flushList();
+            return html;
+        }
 
         async function generateExecutiveSummary(id){
             id = id || analyzerEditingId;
