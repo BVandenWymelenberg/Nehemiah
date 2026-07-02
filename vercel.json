@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/resort-favorites", "destination": "/api/favorites?kind=resort" },
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ]
 }
