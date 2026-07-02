@@ -8534,15 +8534,44 @@
         function nhSize(n){ n=Number(n)||0; return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
         function nhEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];}); }
 
-        function generateExecutiveSummary(id){
+        async function generateExecutiveSummary(id){
             id = id || analyzerEditingId;
             if(!id || !rankedProperties[id]){ alert('Save this property first, then click Executive Summary.'); return; }
+            var p = rankedProperties[id];
             var w = window.open('', '_blank');
             if(!w){ alert('Please allow pop-ups for this site, then click Executive Summary again.'); return; }
-            w.document.open(); w.document.write(buildExecSummaryHtml(rankedProperties[id])); w.document.close();
+            w.document.open();
+            w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Executive Summary</title><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,system-ui,Arial,sans-serif;background:#0f172a;color:#fff}.sp{width:34px;height:34px;border:3px solid rgba(212,160,23,.3);border-top-color:#d4a017;border-radius:50%;animation:sp 1s linear infinite;margin-bottom:16px}@keyframes sp{to{transform:rotate(360deg)}}</style></head><body><div class="sp"></div><div>Generating Executive Summary…</div></body></html>');
+            w.document.close();
+            var ai = '';
+            try { ai = await fetchExecSummary(p); } catch(e){ ai = ''; }
+            w.document.open(); w.document.write(buildExecSummaryHtml(p, ai)); w.document.close();
         }
 
-        function buildExecSummaryHtml(p){
+        // Calls the server AI endpoint; returns '' if unavailable/unconfigured so we fall back gracefully.
+        async function fetchExecSummary(p){
+            var headers = { 'Content-Type':'application/json' };
+            if (typeof nehemiahToken==='string' && nehemiahToken) headers['Authorization'] = 'Bearer ' + nehemiahToken;
+            var res = await fetch('/api/exec-summary', { method:'POST', headers:headers, body: JSON.stringify({ id: p.id }) });
+            if(!res.ok) return '';
+            var data = await res.json().catch(function(){ return {}; });
+            return (data && data.summary) ? String(data.summary) : '';
+        }
+
+        // Data-driven fallback summary when the AI endpoint isn't configured yet.
+        function nhAutoSummary(p, pct, gr, tier, rank, total, crit){
+            var scoreOf = function(c){ return Math.max(0,Math.min(10,Number(p.scores[c.id])||0)); };
+            var loc = [p.townName,p.townState].filter(Boolean).join(', ');
+            var strong = crit.filter(function(c){return scoreOf(c)>=8;}).slice(0,3).map(function(c){return nhEsc(c.label);});
+            var weak = crit.filter(function(c){return scoreOf(c)<=5;}).slice(0,3).map(function(c){return nhEsc(c.label);});
+            var s = '<strong>'+nhEsc(p.name)+'</strong>'+(loc?(' in '+nhEsc(loc)):'')+' scores <strong>'+pct+'% ('+gr.g+', '+tier+')</strong>'+(total>1?(', ranking <strong>#'+rank+' of '+total+'</strong> of your tracked deals'):'')+'.';
+            if(p.askingPrice) s += ' Asking <strong>$'+nhEsc(p.askingPrice)+'</strong>'+(p.acreage?(' across '+nhEsc(p.acreage)+' acres'):'')+(p.rooms?(' with '+nhEsc(p.rooms)+' rooms/keys'):'')+'.';
+            if(strong.length) s += ' Strongest factors: '+strong.join(', ')+'.';
+            if(weak.length) s += ' Watch items: '+weak.join(', ')+'.';
+            return s;
+        }
+
+        function buildExecSummaryHtml(p, aiSummary){
             var origin = window.location.origin;
             var pct = (typeof p.percent==='number')?p.percent:0;
             var gr = nhGrade(pct), tier = nhTier(pct);
@@ -8641,6 +8670,17 @@
               '@media print{body{background:#fff;padding:0}.es-tools{display:none}.es-page{box-shadow:none;margin:0}}'+
               '@page{size:Letter;margin:0}';
 
+            var autoSum = nhAutoSummary(p, pct, gr, tier, rank, all.length, crit);
+            var esIsAI = !!(aiSummary && String(aiSummary).trim());
+            var esParas = esIsAI
+                ? String(aiSummary).trim().split(/\n\s*\n/).map(function(t){ return '<p class="es-lead" style="font-size:.95rem;margin-bottom:12px">'+nhEsc(t).replace(/\n/g,'<br>')+'</p>'; }).join('')
+                : '<p class="es-lead" style="font-size:.95rem;margin-bottom:12px">'+autoSum+'</p>';
+            var esTag = esIsAI ? '✨ AI-generated &middot; synthesized from your uploaded documents'
+                               : 'Auto-generated from this property&rsquo;s data &middot; add ANTHROPIC_API_KEY in Vercel to synthesize from your documents';
+            var execPage = '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">Executive Summary</div><div class="es-sec">The deal in brief</div><div class="es-sr"></div>'+
+                '<div style="display:inline-flex;align-items:center;gap:7px;align-self:flex-start;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:#8b6914;background:#faf6ee;border:1px solid #e7d9b8;padding:6px 11px;border-radius:20px;margin-bottom:16px">'+esTag+'</div>'+
+                esParas + '<p class="es-src">'+(esIsAI?'AI-drafted from your notes &amp; uploaded documents — verify against the source files.':'Add ANTHROPIC_API_KEY in Vercel to auto-write this from your documents.')+'</p></div>'+FOOT(2)+'</div>';
+
             var doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Executive Summary</title>'+
               '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'+
               '<style>'+CSS+'</style></head><body>'+
@@ -8655,28 +8695,30 @@
               '<div><div class="k">Rooms / Keys</div><div class="v">'+(p.rooms?nhEsc(p.rooms):'&mdash;')+'</div></div>'+
               '<div><div class="k">Stage</div><div class="v">'+(p.status?nhEsc(p.status):'&mdash;')+'</div></div></div>'+
               '<div class="es-meta"><span>Prepared for the Investment Committee</span><span>'+dateStr+'</span></div></div></div>'+
+              // EXECUTIVE SUMMARY (AI or data-driven fallback)
+              execPage +
               // VERDICT
               '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">The Verdict</div><div class="es-sec">Where this ranks</div><div class="es-sr"></div>'+
               '<div class="es-vg"><div><p class="es-lead">On the Nehemiah scorecard, '+nhEsc(p.name)+' scores <b>'+pct+'% &mdash; a '+gr.g+' ('+tier+')</b>, ranking <b>#'+rank+' of '+all.length+'</b> tracked '+(all.length===1?'property':'properties')+'. The assessment below is drawn from your saved notes and the documents uploaded to this property.</p>'+
               '<div class="es-cols"><div class="es-box g"><h4>Strengths (8&#8211;10)</h4><ul>'+liList(strengths)+'</ul></div><div class="es-box r"><h4>Watch items (0&#8211;5)</h4><ul>'+liList(watch)+'</ul></div></div></div>'+
               '<div class="es-gc"><div class="es-gr2">'+gr.g+'</div><div class="es-pc2">'+pct+' / 100</div><div class="es-rk"><b>#'+rank+' of '+all.length+'</b><br>'+tier+'</div>'+
               '<div class="es-scaleL">Nehemiah grading scale</div><div class="es-scale"><div class="es-mk" style="left:'+markerPct+'%"></div></div>'+
-              '<div class="es-tk"><span>C</span><span>C+</span><span>B</span><span>B+</span><span>A</span><span>A+</span></div></div></div></div>'+FOOT(2)+'</div>'+
+              '<div class="es-tk"><span>C</span><span>C+</span><span>B</span><span>B+</span><span>A</span><span>A+</span></div></div></div></div>'+FOOT(3)+'</div>'+
               // SCORING DETAIL
               '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">Scoring Detail</div><div class="es-sec">The '+crit.length+'-criterion breakdown</div><div class="es-sr"></div>'+critRows+
-              '<p class="es-src">Each criterion scored 0&#8211;10; weights shown at left. Weighted total = '+pct+'%.</p></div>'+FOOT(3)+'</div>'+
+              '<p class="es-src">Each criterion scored 0&#8211;10; weights shown at left. Weighted total = '+pct+'%.</p></div>'+FOOT(4)+'</div>'+
               // PROPERTY + NOTES
               '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">The Asset</div><div class="es-sec">Property &amp; notes</div><div class="es-sr"></div>'+
               '<table class="es-t">'+detailRows+'</table>'+
-              '<div class="es-eb" style="margin-top:26px">Notes &amp; Assessment</div><div class="es-sr"></div><div class="es-notes">'+notesHtml+'</div></div>'+FOOT(4)+'</div>'+
+              '<div class="es-eb" style="margin-top:26px">Notes &amp; Assessment</div><div class="es-sr"></div><div class="es-notes">'+notesHtml+'</div></div>'+FOOT(5)+'</div>'+
               // PORTFOLIO
               '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">Portfolio Context</div><div class="es-sec">Against your other deals</div><div class="es-sr"></div>'+
-              '<table class="es-rank"><thead><tr><th>Property</th><th>Score</th><th>Grade</th></tr></thead><tbody>'+rankRows+'</tbody></table></div>'+FOOT(5)+'</div>'+
+              '<table class="es-rank"><thead><tr><th>Property</th><th>Score</th><th>Grade</th></tr></thead><tbody>'+rankRows+'</tbody></table></div>'+FOOT(6)+'</div>'+
               // PHOTOS
-              '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">On the Ground</div><div class="es-sec">Site photography</div><div class="es-sr"></div><div class="es-gal">'+photoTiles+'</div></div>'+FOOT(6)+'</div>'+
+              '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">On the Ground</div><div class="es-sec">Site photography</div><div class="es-sr"></div><div class="es-gal">'+photoTiles+'</div></div>'+FOOT(7)+'</div>'+
               // DATA ROOM
               '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">Supplemental Information</div><div class="es-sec">Data room &mdash; '+files.length+' file'+(files.length===1?'':'s')+'</div><div class="es-sr"></div>'+fileRows+
-              '<p class="es-src">Every document uploaded to this property. Use &#8220;Save as PDF&#8221; (top-right) to export this summary.</p></div>'+FOOT(7)+'</div>'+
+              '<p class="es-src">Every document uploaded to this property. Use &#8220;Save as PDF&#8221; (top-right) to export this summary.</p></div>'+FOOT(8)+'</div>'+
               '</body></html>';
             return doc;
         }
