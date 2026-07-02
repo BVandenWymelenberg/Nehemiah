@@ -8704,12 +8704,16 @@
               '.es-att{display:flex;align-items:center;gap:12px;padding:10px 13px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px}.es-ico{font-size:1.1rem}.es-meta{flex:1;display:flex;flex-direction:column}.es-meta b{font-size:.86rem}.es-meta span{font-size:.7rem;color:#64748b}.es-open{font-size:.75rem;color:#b8860b;font-weight:600}'+
               '.es-src{font-size:.76rem;color:#94a3b8;font-style:italic;margin-top:12px}'+
               '@media print{'+
-                'body{background:#fff;padding:0}'+
+                'html,body{background:#fff;padding:0;margin:0;height:auto}'+
                 '.es-tools{display:none}'+
                 '.es-rf{display:none}'+                                   /* per-section footers replaced by @page counter */
-                '.es-page{box-shadow:none;margin:0;min-height:0;page-break-after:always;break-after:page}'+
+                /* content pages must be plain block boxes so tall content (notes, summary) fragments across Letter sheets in every browser */
+                '.es-page{box-shadow:none;margin:0;min-height:0;overflow:visible}'+
+                '.es-page:not(.es-cover){display:block}'+
+                '.es-page:not(.es-cover) .es-pad{display:block}'+
+                '.es-page{page-break-after:always;break-after:page}'+
                 '.es-page:last-child{page-break-after:auto;break-after:auto}'+
-                '.es-cover{min-height:11in}'+                             /* cover fills its sheet (full-bleed) */
+                '.es-cover{display:flex;flex-direction:column;height:11in;min-height:0}'+   /* cover = exactly one full-bleed sheet */
                 '.es-lead,.es-crit,.es-att,.es-box,.es-gc,.es-shot{break-inside:avoid;page-break-inside:avoid}'+
                 'table.es-t tr,table.es-rank tr{break-inside:avoid}'+
               '}'+
