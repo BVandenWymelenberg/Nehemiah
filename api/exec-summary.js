@@ -7,7 +7,9 @@ const MAX_COMP_PDFS = 3;            // how many comp PDFs to attach as native ba
 const MAX_PDF_BYTES = 6 * 1024 * 1024;   // per-file cap for base64 PDF attachments (~6MB)
 const MAX_PDF_TOTAL = 14 * 1024 * 1024;  // total base64 PDF budget across the request
 const MODEL = process.env.EXEC_SUMMARY_MODEL || 'claude-sonnet-4-6';
-const MAX_TOKENS = Number(process.env.EXEC_SUMMARY_MAX_TOKENS) || 1000;
+// Needs headroom for the full 6-section brief INCLUDING the comparable-sales
+// table — 1000 truncates before the comps section, so default higher.
+const MAX_TOKENS = Number(process.env.EXEC_SUMMARY_MAX_TOKENS) || 3000;
 
 // Filenames that mark a document as comparable-sales material.
 const COMP_RE = /(comp\b|comps\b|comparable|comparables|\bcma\b|sales?\s*comp|sold\s*comp|price[-_ ]?per[-_ ]?acre)/i;
