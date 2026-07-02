@@ -8534,6 +8534,36 @@
         function nhSize(n){ n=Number(n)||0; return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
         function nhEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];}); }
 
+        // Downscale a same-origin image to a compact JPEG data URL so the exported PDF stays small.
+        function nhDownscaleImage(url, maxDim){
+            return new Promise(function(resolve){
+                try{
+                    var img = new Image(); img.decoding = 'async';
+                    img.onload = function(){
+                        try{
+                            var w = img.naturalWidth||img.width, h = img.naturalHeight||img.height;
+                            if(!w||!h){ resolve(url); return; }
+                            var s = Math.min(1, maxDim/Math.max(w,h));
+                            var cw = Math.max(1,Math.round(w*s)), ch = Math.max(1,Math.round(h*s));
+                            var c = document.createElement('canvas'); c.width=cw; c.height=ch;
+                            c.getContext('2d').drawImage(img,0,0,cw,ch);
+                            resolve(c.toDataURL('image/jpeg',0.82));
+                        }catch(e){ resolve(url); }
+                    };
+                    img.onerror = function(){ resolve(url); };
+                    img.src = url;
+                }catch(e){ resolve(url); }
+            });
+        }
+        async function nhBuildPhotoMap(p){
+            var map = {}, origin = window.location.origin;
+            var photos = (p.files||[]).filter(fileThumbable);
+            await Promise.all(photos.map(function(f){
+                return nhDownscaleImage(origin+fileUrl(f,false), 1400).then(function(d){ if(d) map[f.id]=d; });
+            }));
+            return map;
+        }
+
         async function generateExecutiveSummary(id){
             id = id || analyzerEditingId;
             if(!id || !rankedProperties[id]){ alert('Save this property first, then click Executive Summary.'); return; }
@@ -8543,9 +8573,15 @@
             w.document.open();
             w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Executive Summary</title><style>body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,system-ui,Arial,sans-serif;background:#0f172a;color:#fff}.sp{width:34px;height:34px;border:3px solid rgba(212,160,23,.3);border-top-color:#d4a017;border-radius:50%;animation:sp 1s linear infinite;margin-bottom:16px}@keyframes sp{to{transform:rotate(360deg)}}</style></head><body><div class="sp"></div><div>Generating Executive Summary…</div></body></html>');
             w.document.close();
-            var ai = '';
-            try { ai = await fetchExecSummary(p); } catch(e){ ai = ''; }
-            w.document.open(); w.document.write(buildExecSummaryHtml(p, ai)); w.document.close();
+            var ai = '', photoUrls = {};
+            try {
+                var results = await Promise.all([
+                    fetchExecSummary(p).catch(function(){ return ''; }),
+                    nhBuildPhotoMap(p).catch(function(){ return {}; })
+                ]);
+                ai = results[0] || ''; photoUrls = results[1] || {};
+            } catch(e) { ai = ''; }
+            w.document.open(); w.document.write(buildExecSummaryHtml(p, ai, photoUrls)); w.document.close();
         }
 
         // Calls the server AI endpoint; returns '' if unavailable/unconfigured so we fall back gracefully.
@@ -8571,7 +8607,7 @@
             return s;
         }
 
-        function buildExecSummaryHtml(p, aiSummary){
+        function buildExecSummaryHtml(p, aiSummary, photoUrls){
             var origin = window.location.origin;
             var pct = (typeof p.percent==='number')?p.percent:0;
             var gr = nhGrade(pct), tier = nhTier(pct);
@@ -8598,7 +8634,7 @@
             var liList = function(arr){ return arr.length? arr.map(function(c){return '<li>'+nhEsc(c.label)+' &mdash; <b>'+scoreOf(c)+'/10</b></li>';}).join('') : '<li style="color:#94a3b8">None</li>'; };
 
             var photoTiles = photos.length? photos.map(function(f,i){
-                var url = origin+fileUrl(f,false);
+                var url = (photoUrls && photoUrls[f.id]) || (origin+fileUrl(f,false));
                 return '<div class="'+(i===0?'es-shot es-big':'es-shot')+'" style="background-image:url(\''+url+'\')"><div class="es-cap">'+nhEsc(f.name)+'</div></div>';
             }).join('') : '<p class="es-src">No photos uploaded to this property.</p>';
 
@@ -8667,8 +8703,21 @@
               '.es-gal{display:grid;grid-template-columns:1fr 1fr;gap:11px}.es-shot{border-radius:11px;overflow:hidden;border:1px solid #e2e8f0;height:180px;background-size:cover;background-position:center;display:flex;align-items:flex-end;color:#fff}.es-shot.es-big{grid-column:1/3;height:270px}.es-cap{padding:9px 12px;font-size:.72rem;font-weight:500;background:linear-gradient(0deg,rgba(0,0,0,.6),transparent);width:100%}'+
               '.es-att{display:flex;align-items:center;gap:12px;padding:10px 13px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px}.es-ico{font-size:1.1rem}.es-meta{flex:1;display:flex;flex-direction:column}.es-meta b{font-size:.86rem}.es-meta span{font-size:.7rem;color:#64748b}.es-open{font-size:.75rem;color:#b8860b;font-weight:600}'+
               '.es-src{font-size:.76rem;color:#94a3b8;font-style:italic;margin-top:12px}'+
-              '@media print{body{background:#fff;padding:0}.es-tools{display:none}.es-page{box-shadow:none;margin:0}}'+
-              '@page{size:Letter;margin:0}';
+              '@media print{'+
+                'body{background:#fff;padding:0}'+
+                '.es-tools{display:none}'+
+                '.es-rf{display:none}'+                                   /* per-section footers replaced by @page counter */
+                '.es-page{box-shadow:none;margin:0;min-height:0;page-break-after:always;break-after:page}'+
+                '.es-page:last-child{page-break-after:auto;break-after:auto}'+
+                '.es-cover{min-height:11in}'+                             /* cover fills its sheet (full-bleed) */
+                '.es-lead,.es-crit,.es-att,.es-box,.es-gc,.es-shot{break-inside:avoid;page-break-inside:avoid}'+
+                'table.es-t tr,table.es-rank tr{break-inside:avoid}'+
+              '}'+
+              '@page{size:Letter;margin:0 0 0.5in 0;'+
+                '@bottom-right{content:counter(page);font:600 9pt Inter,system-ui,sans-serif;color:#64748b;padding-right:0.6in}'+
+                '@bottom-left{content:"Nehemiah · Confidential";font:9pt Inter,system-ui,sans-serif;color:#94a3b8;padding-left:0.6in}'+
+              '}'+
+              '@page :first{margin:0}';
 
             var autoSum = nhAutoSummary(p, pct, gr, tier, rank, all.length, crit);
             var esIsAI = !!(aiSummary && String(aiSummary).trim());
