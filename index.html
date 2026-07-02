@@ -3172,7 +3172,7 @@
                             <button class="analyzer-btn secondary" onclick="resetAnalyzerForm()">Clear</button>
                             <button class="analyzer-btn secondary" id="analyzerResetCriteriaBtn" onclick="resetAnalyzerCriteriaToDefault()">Reset Criteria</button>
                             <button class="analyzer-btn create-new" onclick="createNewProperty()" title="Start a fresh property — you'll be prompted to save current work first">✚ Create New</button>
-                            <button class="analyzer-btn secondary" onclick="openAcquisitionBrief()" title="Generate a deep, institutional-grade acquisition brief with market analysis &amp; comparable sales">📄 Executive Summary</button>
+                            <button class="analyzer-btn secondary" onclick="generateExecutiveSummary()" title="Generate the full branded, 8.5×11 Executive Summary report — market analysis, comparable sales &amp; scoring">📄 Executive Summary</button>
                             <button class="analyzer-btn" onclick="saveAnalyzedProperty()">💾 Save Property</button>
                         </div>
                     </div>
@@ -8904,10 +8904,11 @@
             var overlay = nhPdfOverlay('Reading documents & generating summary…');
             try {
                 var results = await Promise.all([
-                    fetchExecSummary(p).catch(function(){ return ''; }),
+                    fetchExecSummary(p).catch(function(){ return {}; }),
                     nhBuildPhotoMap(p).catch(function(){ return {}; })
                 ]);
-                var html = buildExecSummaryHtml(p, results[0]||'', results[1]||{});
+                var meta = results[0] || {};
+                var html = buildExecSummaryHtml(p, meta.summary||'', results[1]||{}, meta);
                 var msg = document.getElementById('nhPdfMsg'); if(msg) msg.textContent = 'Rendering PDF…';
 
                 var headers = { 'Content-Type':'application/json' };
@@ -8943,14 +8944,15 @@
             } catch(e) { /* ignore */ }
         }
 
-        // Calls the server AI endpoint; returns '' if unavailable/unconfigured so we fall back gracefully.
+        // Calls the server AI endpoint; returns the full payload ({summary, compsSource, sources, ...})
+        // or {} if unavailable/unconfigured so we fall back gracefully.
         async function fetchExecSummary(p){
             var headers = { 'Content-Type':'application/json' };
             if (typeof nehemiahToken==='string' && nehemiahToken) headers['Authorization'] = 'Bearer ' + nehemiahToken;
             var res = await fetch('/api/exec-summary', { method:'POST', headers:headers, body: JSON.stringify({ id: p.id }) });
-            if(!res.ok) return '';
+            if(!res.ok) return {};
             var data = await res.json().catch(function(){ return {}; });
-            return (data && data.summary) ? String(data.summary) : '';
+            return data || {};
         }
 
         // Data-driven fallback summary when the AI endpoint isn't configured yet.
@@ -8966,7 +8968,8 @@
             return s;
         }
 
-        function buildExecSummaryHtml(p, aiSummary, photoUrls){
+        function buildExecSummaryHtml(p, aiSummary, photoUrls, meta){
+            meta = meta || {};
             var origin = window.location.origin;
             var pct = (typeof p.percent==='number')?p.percent:0;
             var gr = nhGrade(pct), tier = nhTier(pct);
@@ -9020,6 +9023,8 @@
             var LOGO = '<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><path d="M30 2L54 12V32C54 44 43 54 30 58C17 54 6 44 6 32V12L30 2Z" stroke="url(#nhg)" stroke-width="2" fill="none"/><rect x="28" y="12" width="4" height="32" fill="url(#nhg)"/><rect x="20" y="38" width="20" height="3" rx="1" fill="url(#nhg)"/><rect x="28" y="44" width="4" height="8" fill="url(#nhg)"/><circle cx="30" cy="54" r="2.5" fill="url(#nhg)"/><path d="M28 12L30 6L32 12H28Z" fill="url(#nhg)"/><defs><linearGradient id="nhg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#d4a017"/><stop offset="50%" stop-color="#b8860b"/><stop offset="100%" stop-color="#8b6914"/></linearGradient></defs></svg>';
             var HEAD = function(){ return '<div class="es-rh"><div class="es-brand">'+LOGO+'<b>Nehemiah</b></div><div class="es-kick">'+nhEsc(p.name)+'</div></div>'; };
             var FOOT = function(n){ return '<div class="es-rf"><span>Nehemiah · Confidential</span><span>Page '+n+'</span></div>'; };
+            // Running-header text for the @page top-right margin box (plain text only; strip CSS-breaking chars).
+            var headerRight = [p.name, loc].filter(Boolean).join(' · ').toUpperCase().replace(/["\\\n\r]/g,'').slice(0,70);
 
             var CSS = '*{box-sizing:border-box;margin:0;padding:0}'+
               'body{background:#334155;font-family:Inter,system-ui,Arial,sans-serif;color:#0f172a;padding:24px 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
@@ -9062,36 +9067,64 @@
               '.es-gal{display:grid;grid-template-columns:1fr 1fr;gap:11px}.es-shot{border-radius:11px;overflow:hidden;border:1px solid #e2e8f0;height:180px;background-size:cover;background-position:center;display:flex;align-items:flex-end;color:#fff}.es-shot.es-big{grid-column:1/3;height:270px}.es-cap{padding:9px 12px;font-size:.72rem;font-weight:500;background:linear-gradient(0deg,rgba(0,0,0,.6),transparent);width:100%}'+
               '.es-att{display:flex;align-items:center;gap:12px;padding:10px 13px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px}.es-ico{font-size:1.1rem}.es-meta{flex:1;display:flex;flex-direction:column}.es-meta b{font-size:.86rem}.es-meta span{font-size:.7rem;color:#64748b}.es-open{font-size:.75rem;color:#b8860b;font-weight:600}'+
               '.es-src{font-size:.76rem;color:#94a3b8;font-style:italic;margin-top:12px}'+
+              /* Rendered-markdown block (the AI market/comps brief) inside the report */
+              '.es-md .nhab-h{font-weight:800;color:#0f172a}'+
+              '.es-md .nhab-h2{font-size:1.15rem;color:#8b6914;border-bottom:2px solid #f0e6cc;padding-bottom:5px;margin:20px 0 9px}'+
+              '.es-md .nhab-h1{font-size:1.28rem;margin:16px 0 8px}'+
+              '.es-md .nhab-h3{font-size:1rem;margin:14px 0 6px;color:#334155}.es-md .nhab-h4{font-size:.9rem;margin:12px 0 5px;color:#475569}'+
+              '.es-md p{font-size:.92rem;line-height:1.6;margin:0 0 10px;color:#334155}'+
+              '.es-md ul,.es-md ol{margin:0 0 10px 20px}.es-md li{font-size:.9rem;line-height:1.5;margin:0 0 5px}'+
+              '.es-md strong{color:#0f172a;font-weight:700}.es-md em{color:#64748b;font-style:italic}'+
+              '.es-md a{color:#b8860b}.es-md code{background:#f1f5f9;border-radius:4px;padding:1px 5px;font-size:.85em}'+
+              '.es-md .nhab-tablewrap{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin:8px 0 16px}'+
+              '.es-md table{width:100%;border-collapse:collapse;font-size:.76rem}'+
+              '.es-md th{background:#faf6ee;color:#8b6914;text-align:left;font-size:.6rem;letter-spacing:.04em;text-transform:uppercase;padding:8px 9px;border-bottom:2px solid #e7d9b8}'+
+              '.es-md td{padding:8px 9px;border-bottom:1px solid #eef2f7;vertical-align:top;color:#334155}'+
+              '.es-md tr:nth-child(even) td{background:#fcfbf7}'+
+              '.es-md .nhab-sources{margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0}.es-md .nhab-sources h4{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:7px}.es-md .nhab-sources li{font-size:.78rem;margin-bottom:4px}.es-md .nhab-note{display:none}'+
+              '.es-prov{display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.05em;padding:6px 12px;border-radius:20px;margin-bottom:14px}'+
+              '.es-prov.up{color:#8b6914;background:#faf6ee;border:1px solid #e7d9b8}.es-prov.web{color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd}'+
+              /* ---- PRINT: every sheet is a true 8.5x11 with uniform margins; sections flow & fragment cleanly ---- */
               '@media print{'+
-                'html,body{background:#fff;padding:0;margin:0;height:auto}'+
+                'html,body{background:#fff;padding:0;margin:0;height:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
                 '.es-tools{display:none}'+
-                '.es-rf{display:none}'+                                   /* per-section footers replaced by @page counter */
-                /* content pages must be plain block boxes so tall content (notes, summary) fragments across Letter sheets in every browser */
-                '.es-page{box-shadow:none;margin:0;min-height:0;overflow:visible}'+
-                '.es-page:not(.es-cover){display:block}'+
-                '.es-page:not(.es-cover) .es-pad{display:block}'+
-                '.es-page{page-break-after:always;break-after:page}'+
-                '.es-page:last-child{page-break-after:auto;break-after:auto}'+
-                '.es-cover{display:flex;flex-direction:column;height:11in;min-height:0}'+   /* cover = exactly one full-bleed sheet */
-                '.es-lead,.es-crit,.es-att,.es-box,.es-gc,.es-shot{break-inside:avoid;page-break-inside:avoid}'+
-                'table.es-t tr,table.es-rank tr{break-inside:avoid}'+
+                '.es-rh,.es-rf{display:none}'+                                   /* running header/footer come from @page margin boxes */
+                '.es-page{box-shadow:none;margin:0;width:auto;min-height:0;overflow:visible;display:block}'+
+                '.es-page .es-pad{display:block;padding:0}'+                     /* @page margins provide the frame on every sheet */
+                '.es-page:not(.es-cover){page-break-before:always;break-before:page}'+  /* each section opens a fresh sheet, then flows */
+                '.es-cover{display:flex;flex-direction:column;height:11in;min-height:0;width:auto;padding:0;border-radius:0}'+
+                '.es-cover .es-pad{display:flex;flex-direction:column;flex:1;padding:0.9in 0.85in}'+
+                '.es-lead,.es-crit,.es-att,.es-box,.es-gc,.es-shot,.es-md .nhab-h2,.es-md .nhab-h3{break-inside:avoid;page-break-inside:avoid}'+
+                '.es-md tr,table.es-t tr,table.es-rank tr{break-inside:avoid}'+
+                '.es-md thead,table.es-rank thead{display:table-header-group}'+
+                '.es-eb,.es-sec,.es-md .nhab-h2,.es-md .nhab-h3{break-after:avoid;page-break-after:avoid}'+
               '}'+
-              '@page{size:Letter;margin:0 0 0.5in 0;'+
-                '@bottom-right{content:counter(page);font:600 9pt Inter,system-ui,sans-serif;color:#64748b;padding-right:0.6in}'+
-                '@bottom-left{content:"Nehemiah · Confidential";font:9pt Inter,system-ui,sans-serif;color:#94a3b8;padding-left:0.6in}'+
+              '@page{size:8.5in 11in;margin:0.85in 0.7in 0.75in;'+
+                '@top-left{content:"NEHEMIAH";font:700 8pt Inter,system-ui,sans-serif;letter-spacing:0.14em;color:#8b6914}'+
+                '@top-right{content:"'+headerRight+'";font:8pt Inter,system-ui,sans-serif;letter-spacing:0.05em;color:#94a3b8}'+
+                '@bottom-left{content:"Nehemiah · Confidential";font:8pt Inter,system-ui,sans-serif;color:#94a3b8}'+
+                '@bottom-right{content:"Page " counter(page);font:600 8pt Inter,system-ui,sans-serif;color:#64748b}'+
               '}'+
-              '@page :first{margin:0}';
+              '@page :first{margin:0;@top-left{content:""}@top-right{content:""}@bottom-left{content:""}@bottom-right{content:""}}';
 
             var autoSum = nhAutoSummary(p, pct, gr, tier, rank, all.length, crit);
             var esIsAI = !!(aiSummary && String(aiSummary).trim());
-            var esParas = esIsAI
-                ? String(aiSummary).trim().split(/\n\s*\n/).map(function(t){ return '<p class="es-lead" style="font-size:.95rem;margin-bottom:12px">'+nhEsc(t).replace(/\n/g,'<br>')+'</p>'; }).join('')
+            // The AI brief is Markdown (6 sections incl. the 25+ acre comps table) — render it as real HTML
+            // inside an .es-md block so the comparable-sales table shows as a table and flows across sheets.
+            var briefHtml = esIsAI
+                ? (typeof nhRenderMarkdown==='function' ? nhRenderMarkdown(String(aiSummary)) : '<p class="es-lead">'+nhEsc(String(aiSummary))+'</p>')
                 : '<p class="es-lead" style="font-size:.95rem;margin-bottom:12px">'+autoSum+'</p>';
-            var esTag = esIsAI ? '✨ AI-generated &middot; synthesized from your uploaded documents'
-                               : 'Auto-generated from this property&rsquo;s data &middot; add ANTHROPIC_API_KEY in Vercel to synthesize from your documents';
-            var execPage = '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">Executive Summary</div><div class="es-sec">The deal in brief</div><div class="es-sr"></div>'+
-                '<div style="display:inline-flex;align-items:center;gap:7px;align-self:flex-start;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:#8b6914;background:#faf6ee;border:1px solid #e7d9b8;padding:6px 11px;border-radius:20px;margin-bottom:16px">'+esTag+'</div>'+
-                esParas + '<p class="es-src">'+(esIsAI?'AI-drafted from your notes &amp; uploaded documents — verify against the source files.':'Add ANTHROPIC_API_KEY in Vercel to auto-write this from your documents.')+'</p></div>'+FOOT(2)+'</div>';
+            var provChip = '';
+            if (esIsAI && meta.compsSource) {
+                var isUp = meta.compsSource === 'uploaded';
+                provChip = '<div class="es-prov '+(isUp?'up':'web')+'">'+(isUp
+                    ? '📎 Comps from uploaded documents'+((meta.compFiles&&meta.compFiles.length)?(' · '+meta.compFiles.length+' file'+(meta.compFiles.length===1?'':'s')):'')
+                    : '🌐 Comps pulled from web · last 24 months')+'</div>';
+            }
+            var execPage = '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">Executive Brief</div><div class="es-sec">Market, comparables &amp; valuation</div><div class="es-sr"></div>'+
+                provChip +
+                '<div class="es-md">'+briefHtml+'</div>'+
+                '<p class="es-src">'+(esIsAI?'AI-drafted from your notes, uploaded documents &amp; the comparable-sales filter — verify against the source files.':'Add ANTHROPIC_API_KEY in Vercel to auto-write the market &amp; comparable-sales analysis from your documents.')+'</p></div>'+FOOT(2)+'</div>';
 
             var doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Executive Summary</title>'+
               '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'+
