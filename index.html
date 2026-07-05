@@ -8827,7 +8827,7 @@
               '.nhab-note{display:none}'+
               '@page{size:8.5in 11in;margin:0.55in 0.6in 0.65in;@bottom-right{content:counter(page);font:9px Inter,sans-serif;color:#94a3b8}@bottom-left{content:"Nehemiah · Confidential · '+nhEsc(date)+'";font:9px Inter,sans-serif;color:#94a3b8}}';
             return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Acquisition Brief</title>'+
-              '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'+
+              ''+
               '<style>'+css+'</style></head><body>'+
               '<div class="mast">'+
                 (gr.g?('<div class="seal"><div class="in"><div class="g">'+gr.g+'</div><div class="p">'+pct+'%</div><div class="l">Score</div></div></div>'):'')+
@@ -9127,7 +9127,7 @@
                 '<p class="es-src">'+(esIsAI?'AI-drafted from your notes, uploaded documents &amp; the comparable-sales filter — verify against the source files.':'Add ANTHROPIC_API_KEY in Vercel to auto-write the market &amp; comparable-sales analysis from your documents.')+'</p></div>'+FOOT(2)+'</div>';
 
             var doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Executive Summary</title>'+
-              '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">'+
+              ''+
               '<style>'+CSS+'</style></head><body>'+
               '<div class="es-tools"><button onclick="window.print()">📄 Save as PDF</button></div>'+
               // COVER
