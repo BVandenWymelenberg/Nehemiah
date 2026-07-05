@@ -8535,7 +8535,7 @@
         function nhEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];}); }
 
         // Downscale a same-origin image to a compact JPEG data URL so the exported PDF stays small.
-        function nhDownscaleImage(url, maxDim){
+        function nhDownscaleImage(url, maxDim, quality){
             return new Promise(function(resolve){
                 try{
                     var img = new Image(); img.decoding = 'async';
@@ -8547,7 +8547,7 @@
                             var cw = Math.max(1,Math.round(w*s)), ch = Math.max(1,Math.round(h*s));
                             var c = document.createElement('canvas'); c.width=cw; c.height=ch;
                             c.getContext('2d').drawImage(img,0,0,cw,ch);
-                            resolve(c.toDataURL('image/jpeg',0.82));
+                            resolve(c.toDataURL('image/jpeg', quality||0.82));
                         }catch(e){ resolve(url); }
                     };
                     img.onerror = function(){ resolve(url); };
@@ -8555,11 +8555,13 @@
                 }catch(e){ resolve(url); }
             });
         }
+        // Embed photos small enough that the rendered PDF stays under Vercel's ~4.5MB
+        // serverless response limit (larger payloads make /api/render-pdf fail silently).
         async function nhBuildPhotoMap(p){
             var map = {}, origin = window.location.origin;
-            var photos = (p.files||[]).filter(fileThumbable);
+            var photos = (p.files||[]).filter(fileThumbable).slice(0, 12);
             await Promise.all(photos.map(function(f){
-                return nhDownscaleImage(origin+fileUrl(f,false), 1400).then(function(d){ if(d) map[f.id]=d; });
+                return nhDownscaleImage(origin+fileUrl(f,false), 1000, 0.7).then(function(d){ if(d) map[f.id]=d; });
             }));
             return map;
         }
@@ -8923,10 +8925,11 @@
                     document.body.appendChild(a); a.click(); a.remove();
                     setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 30000);
                 } else {
-                    // Fallback: open the summary in a new tab so it can still be saved manually.
+                    // Fallback: open the print-ready summary in a new tab and auto-launch the
+                    // print dialog so "Save as PDF" gives clean 8.5x11 pages immediately.
                     var detail = ''; try { detail = (await res.json()).detail || ''; } catch(e){}
                     nhOpenSummaryFallback(html, p.name);
-                    alert('Server PDF generation is unavailable' + (detail?(' ('+detail+')'):'') + '. Opened the summary in a new tab so you can Save as PDF from there.');
+                    alert('Preparing your report for printing (status ' + res.status + (detail?(': '+detail):'') + ').\n\nIn the print dialog that opens, choose "Save as PDF", Paper size "US Letter", Margins "Default", Scale 100%.');
                 }
             } catch(e) {
                 alert('Could not generate the PDF: ' + (e && e.message || e));
