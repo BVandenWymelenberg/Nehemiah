@@ -8925,11 +8925,12 @@
                     document.body.appendChild(a); a.click(); a.remove();
                     setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 30000);
                 } else {
-                    // Fallback: open the print-ready summary in a new tab and auto-launch the
-                    // print dialog so "Save as PDF" gives clean 8.5x11 pages immediately.
+                    // Fallback: open the print-ready summary in a new tab. The report
+                    // auto-opens the print dialog; the user just picks Save as PDF.
                     var detail = ''; try { detail = (await res.json()).detail || ''; } catch(e){}
+                    console.warn('render-pdf status', res.status, detail);
                     nhOpenSummaryFallback(html, p.name);
-                    alert('Preparing your report for printing (status ' + res.status + (detail?(': '+detail):'') + ').\n\nIn the print dialog that opens, choose "Save as PDF", Paper size "US Letter", Margins "Default", Scale 100%.');
+                    alert('Your report opened in a new tab and the print dialog will appear.\n\nIn it: turn ON "Background graphics", set Paper to "US Letter", Margins "Default", Scale 100%, then choose "Save as PDF". This gives clean 8.5×11 pages.');
                 }
             } catch(e) {
                 alert('Could not generate the PDF: ' + (e && e.message || e));
@@ -9031,8 +9032,9 @@
 
             var CSS = '*{box-sizing:border-box;margin:0;padding:0}'+
               'body{background:#334155;font-family:Inter,system-ui,Arial,sans-serif;color:#0f172a;padding:24px 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-              '.es-tools{position:fixed;top:14px;right:16px;z-index:99;display:flex;gap:8px}'+
-              '.es-tools button{font:600 13px Inter,sans-serif;padding:10px 16px;border:0;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#d4a017,#8b6914);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.3)}'+
+              '.es-tools{position:fixed;top:14px;right:16px;z-index:99;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px)}'+
+              '.es-hint{background:rgba(11,18,32,.94);color:#e2e8f0;font-size:12px;line-height:1.4;padding:9px 13px;border-radius:9px;border:1px solid rgba(212,160,23,.4);box-shadow:0 6px 18px rgba(0,0,0,.3)}.es-hint b{color:#f3d78a}'+
+              '.es-tools button{font:600 13px Inter,sans-serif;padding:10px 16px;border:0;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#d4a017,#8b6914);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.3);white-space:nowrap}'+
               '.es-page{width:8.5in;min-height:11in;margin:0 auto 22px;background:#fff;box-shadow:0 14px 40px rgba(0,0,0,.35);position:relative;display:flex;flex-direction:column;overflow:hidden}'+
               '.es-pad{padding:0.7in 0.75in;flex:1;display:flex;flex-direction:column}'+
               '.es-rh{display:flex;align-items:center;justify-content:space-between;padding:16px 0.75in;border-bottom:1px solid #e2e8f0}'+
@@ -9132,7 +9134,7 @@
             var doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+nhEsc(p.name)+' — Executive Summary</title>'+
               ''+
               '<style>'+CSS+'</style></head><body>'+
-              '<div class="es-tools"><button onclick="window.print()">📄 Save as PDF</button></div>'+
+              '<div class="es-tools"><span class="es-hint">To save correctly: enable <b>Background graphics</b> · Paper <b>US Letter</b> · Margins <b>Default</b> · Scale <b>100%</b></span><button onclick="window.print()">📄 Save as PDF</button></div>'+
               // COVER
               '<div class="es-page es-cover"><div class="es-seal"><div class="in"><div class="gr">'+gr.g+'</div><div class="pc">'+pct+'%</div><div class="lb">Nehemiah Score</div></div></div>'+
               '<div class="es-pad"><div class="es-ct">'+LOGO+'<div><div class="es-name">Nehemiah</div><div class="es-sub">Premier Resort Property Information</div></div></div>'+
@@ -9167,6 +9169,8 @@
               // DATA ROOM
               '<div class="es-page">'+HEAD()+'<div class="es-pad"><div class="es-eb">Supplemental Information</div><div class="es-sec">Data room &mdash; '+files.length+' file'+(files.length===1?'':'s')+'</div><div class="es-sr"></div>'+fileRows+
               '<p class="es-src">Every document uploaded to this property. Use &#8220;Save as PDF&#8221; (top-right) to export this summary.</p></div>'+FOOT(8)+'</div>'+
+              // Auto-open the print dialog in a real browser tab (skipped under headless render).
+              '<script>if(!navigator.webdriver){window.addEventListener("load",function(){setTimeout(function(){try{window.print();}catch(e){}},700);});}<\/script>'+
               '</body></html>';
             return doc;
         }
