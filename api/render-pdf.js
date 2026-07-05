@@ -39,8 +39,19 @@ export default async function handler(req, res) {
       headless: chromium.headless,
     });
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 45000 });
-    try { await page.evaluate(() => document.fonts && document.fonts.ready); } catch (e) { /* fonts optional */ }
+    // Load the DOM, but never let a slow/blocked external resource (Google Fonts,
+    // image URLs) stall the whole render — fall through to the PDF regardless.
+    try {
+      await page.setContent(html, { waitUntil: 'load', timeout: 15000 });
+    } catch (e) {
+      console.warn('render-pdf setContent load timed out; continuing:', e && e.message);
+    }
+    try {
+      await Promise.race([
+        page.evaluate(() => document.fonts && document.fonts.ready),
+        new Promise((r) => setTimeout(r, 2500)),
+      ]);
+    } catch (e) { /* fonts optional */ }
     const pdf = await page.pdf({
       preferCSSPageSize: true,   // honor the document's @page { size: Letter } + margins
       printBackground: true,     // navy cover, colored bars, etc.
