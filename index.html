@@ -4612,11 +4612,7 @@
             if (gisMap) return; // Already initialized
 
             gisMap = L.map('gisMapView').setView([34.87, -111.76], 10); // Default to Sedona area
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '©OpenStreetMap, ©CartoDB',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(gisMap);
+            addBaseTiles(gisMap);
 
             gisMarkers = L.layerGroup().addTo(gisMap);
 
@@ -6906,14 +6902,23 @@
 
         let map, markers = [];
 
+        // Basemap: Esri Light Gray Canvas (no API key needed). CARTO's basemaps
+        // now render "API KEY REQUIRED" tiles for unregistered sites.
+        function addBaseTiles(target) {
+            const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+            L.tileLayer(esri + 'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
+                maxNativeZoom: 16, maxZoom: 19
+            }).addTo(target);
+            L.tileLayer(esri + 'World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 16, maxZoom: 19
+            }).addTo(target);
+        }
+
         // ============ INITIALIZATION ============
         function initMap() {
             map = L.map('map').setView([39.8283, -98.5795], 4);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '©OpenStreetMap, ©CartoDB',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
+            addBaseTiles(map);
 
             // Only show top 15 markets on initial load
             hotMarkets.slice(0, 15).forEach(m => addMarker(m));
